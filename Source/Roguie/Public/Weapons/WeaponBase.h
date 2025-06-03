@@ -13,7 +13,7 @@
 #define DEFAULT_HOLSTER_SOCKET_NAME TEXT("sword_socket")
 #define DEFAULT_WEAPON_SOCKET_NAME TEXT("hand_r_socket")
 
-class AMyRoguieCharacter;
+class ARoguieCharacter;
 
 UCLASS()
 class ROGUIE_API AWeaponBase : public AActor, public FLogger
@@ -36,8 +36,8 @@ public:
 
 	static const FName GetDefaultHolsterSocketName() { return DEFAULT_HOLSTER_SOCKET_NAME; };
 	static const FName GetDefaultWeaponSocketName() { return DEFAULT_WEAPON_SOCKET_NAME; };
-	void AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character);
-	void AttachWeaponToHandSocket(AMyRoguieCharacter* Character);
+	void AttachWeaponToHolsterSocket(ARoguieCharacter* Character);
+	void AttachWeaponToHandSocket(ARoguieCharacter* Character);
 	FName GetHolsterSocketName() const;
 	FName GetWeaponSocketName() const;
 	UAnimMontage* GetComboMontage(int32 index) const;

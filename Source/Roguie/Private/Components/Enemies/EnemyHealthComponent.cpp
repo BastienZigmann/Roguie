@@ -6,7 +6,7 @@
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Enemies/EnemyBase.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UEnemyHealthComponent::UEnemyHealthComponent()

@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthFlashComponent.h"
@@ -23,7 +23,7 @@
 // *********************************************
 
 // Sets default values
-AMyRoguieCharacter::AMyRoguieCharacter()
+ARoguieCharacter::ARoguieCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -67,7 +67,7 @@ AMyRoguieCharacter::AMyRoguieCharacter()
 
 }
 
-void AMyRoguieCharacter::BeginPlay()
+void ARoguieCharacter::BeginPlay()
 {
     Super::BeginPlay();
     
@@ -94,7 +94,7 @@ void AMyRoguieCharacter::BeginPlay()
 
 }
 
-void AMyRoguieCharacter::PossessedBy(AController* NewController)
+void ARoguieCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
@@ -116,7 +116,7 @@ void AMyRoguieCharacter::PossessedBy(AController* NewController)
 }
 
 // Called to bind functionality to input
-void AMyRoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ARoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
@@ -125,20 +125,20 @@ void AMyRoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
     if (!EnhancedInputComponent) return;
 
     // Bind MoveForward and MoveRight (using Enhanced Input)
-    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &AMyRoguieCharacter::MoveForward);
-    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &AMyRoguieCharacter::EndMoveForward);
-    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &AMyRoguieCharacter::MoveRight);
-    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Completed, this, &AMyRoguieCharacter::EndMoveRight);
-    EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Triggered, this, &AMyRoguieCharacter::StartDash);
-    EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &AMyRoguieCharacter::HandleAttackInput);
-    EnhancedInputComponent->BindAction(InventoryInput, ETriggerEvent::Started, this, &AMyRoguieCharacter::HandleInventoryInput);
+    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveForward);
+    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveForward);
+    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveRight);
+    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveRight);
+    EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::StartDash);
+    EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ARoguieCharacter::HandleAttackInput);
+    EnhancedInputComponent->BindAction(InventoryInput, ETriggerEvent::Started, this, &ARoguieCharacter::HandleInventoryInput);
 }
 
 // *********************************************
 // ********* INPUTS ****************************
 // *********************************************
 
-void AMyRoguieCharacter::MoveForward(const FInputActionValue& Value)
+void ARoguieCharacter::MoveForward(const FInputActionValue& Value)
 {
     
     float MovementValue = Value.Get<float>();
@@ -156,7 +156,7 @@ void AMyRoguieCharacter::MoveForward(const FInputActionValue& Value)
     GetCharacterStateComponent()->EnterMovingState();
 }
 
-void AMyRoguieCharacter::MoveRight(const FInputActionValue& Value)
+void ARoguieCharacter::MoveRight(const FInputActionValue& Value)
 {    
     float MovementValue = Value.Get<float>();
 
@@ -173,7 +173,7 @@ void AMyRoguieCharacter::MoveRight(const FInputActionValue& Value)
     GetCharacterStateComponent()->EnterMovingState();
 }
 
-void AMyRoguieCharacter::EndMoveForward()
+void ARoguieCharacter::EndMoveForward()
 {
     if (!GetCharacterStateComponent()->IsMoving()) return;
 
@@ -185,7 +185,7 @@ void AMyRoguieCharacter::EndMoveForward()
         GetCharacterStateComponent()->EnterIdleState();
 }
 
-void AMyRoguieCharacter::EndMoveRight()
+void ARoguieCharacter::EndMoveRight()
 {
     if (!GetCharacterStateComponent()->IsMoving()) return;
     
@@ -197,12 +197,12 @@ void AMyRoguieCharacter::EndMoveRight()
 		GetCharacterStateComponent()->EnterIdleState();
 }
 
-void AMyRoguieCharacter::HandleAttackInput()
+void ARoguieCharacter::HandleAttackInput()
 {
 	GetCombatComponent()->StartAttack();
 }
 
-void AMyRoguieCharacter::HandleInventoryInput()
+void ARoguieCharacter::HandleInventoryInput()
 {
     if (InventoryComponent)
     {
@@ -227,7 +227,7 @@ void AMyRoguieCharacter::HandleInventoryInput()
 // ********* DASH ******************************
 // *********************************************
 
-FVector AMyRoguieCharacter::FindSafeDashLocation(FVector desiredStartLocation, FVector desiredEndLocation)
+FVector ARoguieCharacter::FindSafeDashLocation(FVector desiredStartLocation, FVector desiredEndLocation)
 {
     float capsuleRadius = GetCapsuleComponent()->GetScaledCapsuleRadius();
     float capsuleDiameter = capsuleRadius * 2;
@@ -292,7 +292,7 @@ FVector AMyRoguieCharacter::FindSafeDashLocation(FVector desiredStartLocation, F
     return dashStartLocation;
 }
 
-int32 AMyRoguieCharacter::GetAvailableDashChargeIndex() const
+int32 ARoguieCharacter::GetAvailableDashChargeIndex() const
 {
     for (int32 i = 0; i < DashCharges.Num(); ++i)
     {
@@ -303,7 +303,7 @@ int32 AMyRoguieCharacter::GetAvailableDashChargeIndex() const
     return INDEX_NONE; // No dash charges available
 }
 
-void AMyRoguieCharacter::ResetDashCharge(int32 DashChargeIndex)
+void ARoguieCharacter::ResetDashCharge(int32 DashChargeIndex)
 {
     if (DashCharges.IsValidIndex(DashChargeIndex))
     {
@@ -312,7 +312,7 @@ void AMyRoguieCharacter::ResetDashCharge(int32 DashChargeIndex)
     }
 }
 
-void AMyRoguieCharacter::StartDash()
+void ARoguieCharacter::StartDash()
 {
     if (GetCharacterStateComponent()->IsDead()) return;
     if (!PlayerController) return;
@@ -329,7 +329,7 @@ void AMyRoguieCharacter::StartDash()
     // Start cooldown for this specific dash charge
     GetWorldTimerManager().SetTimer(
         DashCharges[AvailableDashIndex].CooldownTimer,
-        FTimerDelegate::CreateUObject(this, &AMyRoguieCharacter::ResetDashCharge, AvailableDashIndex),
+        FTimerDelegate::CreateUObject(this, &ARoguieCharacter::ResetDashCharge, AvailableDashIndex),
         dashCooldown,
         false
     );
@@ -361,14 +361,14 @@ void AMyRoguieCharacter::StartDash()
 }
 
 UFUNCTION()
-void AMyRoguieCharacter::DashUpdate(float Alpha)
+void ARoguieCharacter::DashUpdate(float Alpha)
 {
     FVector NewLocation = FMath::Lerp(dashStartLocation, dashEndLocation, Alpha);
     SetActorLocation(NewLocation);
 }
 
 UFUNCTION()
-void AMyRoguieCharacter::DashFinished()
+void ARoguieCharacter::DashFinished()
 {
     GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
     GetCharacterStateComponent()->EnterIdleState();
@@ -378,7 +378,7 @@ void AMyRoguieCharacter::DashFinished()
 // *********************************************
 // ********* UI ********************************
 // *********************************************
-float AMyRoguieCharacter::GetDashCooldownProgress() const
+float ARoguieCharacter::GetDashCooldownProgress() const
 {
     //return 0;
     return GetWorldTimerManager().GetTimerElapsed(dashCooldownTimer) / dashCooldown;
@@ -388,7 +388,7 @@ float AMyRoguieCharacter::GetDashCooldownProgress() const
 // ********* TICK ******************************
 // *********************************************
 
-void AMyRoguieCharacter::Tick(float DeltaTime)
+void ARoguieCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
@@ -400,7 +400,7 @@ void AMyRoguieCharacter::Tick(float DeltaTime)
 // *********************************************
 // ********* Class Accessors *******************
 // *********************************************
-TObjectPtr<UHealthFlashComponent>& AMyRoguieCharacter::GetHealthFlashComponent() 
+TObjectPtr<UHealthFlashComponent>& ARoguieCharacter::GetHealthFlashComponent() 
 {
 	if (!HealthFlashComponent)
 	{
@@ -410,7 +410,7 @@ TObjectPtr<UHealthFlashComponent>& AMyRoguieCharacter::GetHealthFlashComponent()
     return HealthFlashComponent;
 }
 
-TObjectPtr<UCharacterStateComponent>& AMyRoguieCharacter::GetCharacterStateComponent() 
+TObjectPtr<UCharacterStateComponent>& ARoguieCharacter::GetCharacterStateComponent() 
 {
 	if (!CharacterStateComponent)
 	{
@@ -421,7 +421,7 @@ TObjectPtr<UCharacterStateComponent>& AMyRoguieCharacter::GetCharacterStateCompo
     return CharacterStateComponent;
 }
 
-TObjectPtr<UCharacterCombatComponent>& AMyRoguieCharacter::GetCombatComponent() 
+TObjectPtr<UCharacterCombatComponent>& ARoguieCharacter::GetCombatComponent() 
 {
     if (!CombatComponent)
     {
@@ -432,7 +432,7 @@ TObjectPtr<UCharacterCombatComponent>& AMyRoguieCharacter::GetCombatComponent()
     return CombatComponent;
 }
 
-TObjectPtr<UCharacterInventoryComponent>& AMyRoguieCharacter::GetInventoryComponent() 
+TObjectPtr<UCharacterInventoryComponent>& ARoguieCharacter::GetInventoryComponent() 
 {
     if (!InventoryComponent)
     {
@@ -443,7 +443,7 @@ TObjectPtr<UCharacterInventoryComponent>& AMyRoguieCharacter::GetInventoryCompon
     return InventoryComponent;
 }
 
-TObjectPtr<UWeaponComponent>& AMyRoguieCharacter::GetWeaponComponent() 
+TObjectPtr<UWeaponComponent>& ARoguieCharacter::GetWeaponComponent() 
 {
     if (!WeaponComponent)
     {

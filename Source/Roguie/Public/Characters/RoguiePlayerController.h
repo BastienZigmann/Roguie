@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "MyRoguiePlayerController.generated.h"
+#include "RoguiePlayerController.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ROGUIE_API AMyRoguiePlayerController : public APlayerController
+class ROGUIE_API ARoguiePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 

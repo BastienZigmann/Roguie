@@ -2,7 +2,7 @@
 
 
 #include "Animation/AnimNotifies/AnimNotify_PlayerWeaponSwitch.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Components/WeaponComponent.h"
 
 FString UAnimNotify_PlayerWeaponSwitch::GetNotifyName_Implementation() const
@@ -18,7 +18,7 @@ void UAnimNotify_PlayerWeaponSwitch::Notify(USkeletalMeshComponent* MeshComp, UA
     AActor* Owner = MeshComp->GetOwner();
     if (!Owner) return;
 
-    if (AMyRoguieCharacter* Player = Cast<AMyRoguieCharacter>(Owner))
+    if (ARoguieCharacter* Player = Cast<ARoguieCharacter>(Owner))
     {
         Player->GetWeaponComponent()->WeaponSocketSwitch();
     }

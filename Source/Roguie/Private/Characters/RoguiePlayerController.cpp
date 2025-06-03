@@ -1,9 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Characters/MyRoguiePlayerController.h"
+#include "Characters/RoguiePlayerController.h"
 
-void AMyRoguiePlayerController::BeginPlay()
+void ARoguiePlayerController::BeginPlay()
 {
     Super::BeginPlay();
 

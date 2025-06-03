@@ -2,9 +2,9 @@
 
 
 #include "Weapons/WeaponBase.h"
-#include "Weapons/WeaponDataAsset.h"
+#include "Data/DataAssets/Weapons/WeaponDataAsset.h"
 #include <Utility/WeaponAnimationLibrary.h>
-#include <Characters/MyRoguieCharacter.h>
+#include <Characters/RoguieCharacter.h>
 #include <Kismet/GameplayStatics.h>
 //#include "Weapons/WeaponStatsBlock.h"
 
@@ -38,7 +38,7 @@ void AWeaponBase::BeginPlay()
 	}
 }
 
-void AWeaponBase::AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character)
+void AWeaponBase::AttachWeaponToHolsterSocket(ARoguieCharacter* Character)
 {
 	if (!Character || !Character->GetMesh()) return;
 	DebugLog(FString::Printf(TEXT("Attaching %s to holster socket name %s"), *UEnum::GetValueAsString(GetWeaponType()), *AnimationSet.HolsterSocketName.ToString()), this);
@@ -47,7 +47,7 @@ void AWeaponBase::AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character)
 	AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetHolsterSocketName());
 }
 
-void AWeaponBase::AttachWeaponToHandSocket(AMyRoguieCharacter* Character)
+void AWeaponBase::AttachWeaponToHandSocket(ARoguieCharacter* Character)
 {
 	if (!Character || !Character->GetMesh()) return;
 	DebugLog(FString::Printf(TEXT("Attaching %s to hand socket name %s"), *UEnum::GetValueAsString(GetWeaponType()), *AnimationSet.HolsterSocketName.ToString()), this);
@@ -59,7 +59,7 @@ void AWeaponBase::AttachWeaponToHandSocket(AMyRoguieCharacter* Character)
 
 void AWeaponBase::InitializeAnimationSet()
 {
-	AMyRoguieCharacter* Character = Cast<AMyRoguieCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	ARoguieCharacter* Character = Cast<ARoguieCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	const FWeaponAnimationSet* AnimSet = UWeaponAnimationLibrary::GetAnimationSet(
 		Character->GetCharacterType(), GetWeaponType());
 	if (AnimSet)

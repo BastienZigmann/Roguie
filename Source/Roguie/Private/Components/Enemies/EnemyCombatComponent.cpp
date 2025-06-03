@@ -5,7 +5,7 @@
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include <Kismet/GameplayStatics.h>
 
 UEnemyCombatComponent::UEnemyCombatComponent()

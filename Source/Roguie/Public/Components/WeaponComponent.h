@@ -48,7 +48,7 @@ private:
 	float AttackAnimationRate = 1.5f;
 
 	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
+	TObjectPtr<class ARoguieCharacter> OwningActor;
 
 	UPROPERTY()
 	TObjectPtr<AWeaponBase> EquippedWeapon = nullptr;

@@ -2,7 +2,7 @@
 
 
 #include "Components/WeaponComponent.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Weapons/WeaponBase.h"
 #include <Data/WeaponAnimationData.h>
 #include <Utility/WeaponAnimationLibrary.h>
@@ -22,7 +22,7 @@ void UWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<AMyRoguieCharacter>(GetOwner());
+	OwningActor = Cast<ARoguieCharacter>(GetOwner());
 
 }
 

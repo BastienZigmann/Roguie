@@ -54,7 +54,7 @@ protected:
 
 private:
 	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
+	TObjectPtr<class ARoguieCharacter> OwningActor;
 	
 	ECharacterState CurrentState = ECharacterState::Idle;
 

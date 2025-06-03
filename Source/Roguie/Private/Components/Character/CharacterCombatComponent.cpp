@@ -8,7 +8,7 @@
 #include "Weapons/WeaponBase.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/BoxComponent.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include <Kismet/GameplayStatics.h>
 
 // Sets default values for this component's properties
@@ -27,7 +27,7 @@ void UCharacterCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<AMyRoguieCharacter>(GetOwner());
+	OwningActor = Cast<ARoguieCharacter>(GetOwner());
 
 	SetupAttackHitBoxes();
 	

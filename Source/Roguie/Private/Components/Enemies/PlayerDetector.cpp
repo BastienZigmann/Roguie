@@ -3,9 +3,9 @@
 
 #include "Components/Enemies/PlayerDetector.h"
 #include <Kismet/GameplayStatics.h>
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Enemies/EnemyBase.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UPlayerDetector::UPlayerDetector()
@@ -87,7 +87,7 @@ bool UPlayerDetector::HasLineOfSight()
 		QueryParams
 	);
 
-	return (bHit && HitResult.GetActor()->IsA(AMyRoguieCharacter::StaticClass()));
+	return (bHit && HitResult.GetActor()->IsA(ARoguieCharacter::StaticClass()));
 
 }
 
@@ -135,18 +135,18 @@ void UPlayerDetector::DetectPlayer()
 	}
 }
 
-AMyRoguieCharacter* UPlayerDetector::GetPlayerCharacter()
+ARoguieCharacter* UPlayerDetector::GetPlayerCharacter()
 {
 	if (!CachedCharacter)
 	{
 		TArray<AActor*> FoundActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMyRoguieCharacter::StaticClass(), FoundActors);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoguieCharacter::StaticClass(), FoundActors);
 		if (FoundActors.Num() == 0 || FoundActors.Num() > 1 || FoundActors[0] == nullptr)
 		{
 			ErrorLog("Too many or no players", this);
 			return nullptr;
 		}
-		CachedCharacter = Cast<AMyRoguieCharacter>(FoundActors[0]);
+		CachedCharacter = Cast<ARoguieCharacter>(FoundActors[0]);
 	}
 	return CachedCharacter;
 }

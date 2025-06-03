@@ -5,7 +5,7 @@
 #include "WeaponStatsBlock.generated.h"
 
 USTRUCT(BlueprintType)
-struct FWeaponStatBlock
+struct FWeaponStatBlock // TODO: Core/Types
 {
     GENERATED_BODY()
 

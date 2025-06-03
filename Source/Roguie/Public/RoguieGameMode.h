@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "MyRoguieGameMode.generated.h"
+#include "RoguieGameMode.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ROGUIE_API AMyRoguieGameMode : public AGameModeBase
+class ROGUIE_API ARoguieGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 	
 public:
-	AMyRoguieGameMode();
+	ARoguieGameMode();
 
 };

@@ -53,7 +53,7 @@ private:
 	void SetupAttackHitBoxes();
 
 	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
+	TObjectPtr<class ARoguieCharacter> OwningActor;
 	UPROPERTY()
 	TArray<TObjectPtr<UAnimMontage>> AttackComboMontages;
 

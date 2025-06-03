@@ -9,7 +9,7 @@
 #include "Core/Types/EnemyTypes.h"
 #include "Enemies/EnemyBase.h"
 #include "Utility/Logger.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UEnemyBehaviorComponent::UEnemyBehaviorComponent()

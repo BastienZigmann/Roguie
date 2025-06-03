@@ -3,7 +3,7 @@
 
 #include "Components/Character/CharacterInventoryComponent.h"
 #include "CoreMinimal.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Components/WeaponComponent.h"
 #include "Weapons/WeaponBase.h"
 
@@ -23,7 +23,7 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 void UCharacterInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	OwningActor = Cast<AMyRoguieCharacter>(GetOwner());
+	OwningActor = Cast<ARoguieCharacter>(GetOwner());
 }
 
 bool UCharacterInventoryComponent::CycleWeapon()

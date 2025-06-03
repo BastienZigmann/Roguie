@@ -9,7 +9,7 @@
 #include "Core/Types/RoguieTypes.h"
 #include "Core/Types/CombatTypes.h"
 #include "Utility/Logger.h"
-#include "MyRoguieCharacter.generated.h"
+#include "RoguieCharacter.generated.h"
 
 class UInputAction;
 struct FInputActionValue;
@@ -26,13 +26,13 @@ struct FDashCharge
 };
 
 UCLASS()
-class ROGUIE_API AMyRoguieCharacter : public ACharacter, public FLogger
+class ROGUIE_API ARoguieCharacter : public ACharacter, public FLogger
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
-	AMyRoguieCharacter();
+	ARoguieCharacter();
 
 	// Movement functions
 	void MoveRight(const FInputActionValue& Value);

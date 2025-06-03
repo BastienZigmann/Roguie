@@ -46,6 +46,6 @@ private:
 	bool HasValidWeapon() const;
 
 	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
+	TObjectPtr<class ARoguieCharacter> OwningActor;
 
 };

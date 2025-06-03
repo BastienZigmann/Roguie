@@ -2,7 +2,7 @@
 
 
 #include "Components/Character/CharacterStateComponent.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Components/Character/CharacterInventoryComponent.h"
 
 // Sets default values for this component's properties
@@ -19,7 +19,7 @@ void UCharacterStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<AMyRoguieCharacter>(GetOwner());
+	OwningActor = Cast<ARoguieCharacter>(GetOwner());
 	
 }
 
