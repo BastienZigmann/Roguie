@@ -1,0 +1,29 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "Animation/AnimNotifies/AnimNotify_PlayerWeaponSwitch.h"
+#include "Characters/MyRoguieCharacter.h"
+#include "Components/WeaponComponent.h"
+
+FString UAnimNotify_PlayerWeaponSwitch::GetNotifyName_Implementation() const
+{
+	return TEXT("PlayerWeaponSocketSwitch");
+}
+
+
+void UAnimNotify_PlayerWeaponSwitch::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+{
+    if (!MeshComp) return;
+
+    AActor* Owner = MeshComp->GetOwner();
+    if (!Owner) return;
+
+    if (AMyRoguieCharacter* Player = Cast<AMyRoguieCharacter>(Owner))
+    {
+        Player->GetWeaponComponent()->WeaponSocketSwitch();
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UAnimNotify_PlayerWeaponSwitch: Owner is not a PlayerCharacter!"));
+    }
+}

@@ -104,7 +104,6 @@ void AMyRoguieCharacter::PossessedBy(AController* NewController)
         PlayerController = Cast<APlayerController>(NewController);
         if (PlayerController)
         {
-
             TObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem =
                 ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
 

@@ -2,7 +2,7 @@
 
 
 #include "Components/Enemies/EnemyCombatComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
 #include "Enemies/EnemyDataAsset.h"

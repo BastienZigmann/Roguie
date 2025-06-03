@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Enemies/Animation/AnimNotify_EnemyMeleeHit.h"
+#include "Animation/AnimNotifies/AnimNotify_EnemyMeleeHit.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
 

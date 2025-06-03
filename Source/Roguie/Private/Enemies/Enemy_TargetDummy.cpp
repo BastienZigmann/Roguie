@@ -5,7 +5,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Components/Enemies/EnemyMovementComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include "Components/Enemies/EnemyHealthComponent.h"
 

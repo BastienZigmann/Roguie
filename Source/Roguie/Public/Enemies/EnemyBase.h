@@ -11,7 +11,7 @@
 class UPlayerDetector;
 class UEnemyMovementComponent;
 class UCharacterMovementComponent;
-class UAnimManagerComponent;
+class UEnemyAnimManagerComponent;
 class UEnemyBehaviorComponent;
 class UEnemyHealthComponent;
 class UStatusEffectComponent;
@@ -33,7 +33,7 @@ public:
 	// --- Components getters
 	UPlayerDetector* GetPlayerDetectorComponent() const { return PlayerDetectorComponent; }
 	UEnemyMovementComponent* GetEnemyMovementComponent() const { return EnemyMovementComponent; }
-	UAnimManagerComponent* GetAnimManagerComponent() const { return AnimManagerComponent; }
+	UEnemyAnimManagerComponent* GetAnimManagerComponent() const { return AnimManagerComponent; }
 	UEnemyBehaviorComponent* GetBehaviorComponent() const { return BehaviorComponent; }
 	UEnemyHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	UStatusEffectComponent* GetStatusEffectComponent() const { return StatusEffectComponent; }
@@ -62,7 +62,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyMovementComponent> EnemyMovementComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UAnimManagerComponent> AnimManagerComponent;
+	TObjectPtr<UEnemyAnimManagerComponent> AnimManagerComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyBehaviorComponent> BehaviorComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))

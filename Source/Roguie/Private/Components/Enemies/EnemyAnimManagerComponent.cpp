@@ -1,14 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
 #include "Enemies/EnemyBase.h"
 #include "Enemies/EnemyDataAsset.h"
 #include "Core/Types/EnemyTypes.h"
 
 // Sets default values for this component's properties
-UAnimManagerComponent::UAnimManagerComponent()
+UEnemyAnimManagerComponent::UEnemyAnimManagerComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -19,7 +19,7 @@ UAnimManagerComponent::UAnimManagerComponent()
 
 
 // Called when the game starts
-void UAnimManagerComponent::BeginPlay()
+void UEnemyAnimManagerComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -37,7 +37,7 @@ void UAnimManagerComponent::BeginPlay()
 	}
 }
 
-void UAnimManagerComponent::PlayAttackMontage(int32 Index)
+void UEnemyAnimManagerComponent::PlayAttackMontage(int32 Index)
 {
 	if (!OwningActor || !GetAnimInstance()) return;
 	UAnimMontage* AttackMontage = OwningActor->GetCombatComponent()->GetAttackMontage(Index);
@@ -59,7 +59,7 @@ void UAnimManagerComponent::PlayAttackMontage(int32 Index)
 	}
 }
 
-void UAnimManagerComponent::PlayDeathMontage()
+void UEnemyAnimManagerComponent::PlayDeathMontage()
 {
 	if (!OwningActor || !GetAnimInstance()) return;
 	if (!DeathMontage)
@@ -72,7 +72,7 @@ void UAnimManagerComponent::PlayDeathMontage()
 	DebugLog("Playing Death montage", this);
 }
 
-void UAnimManagerComponent::PlayGetHitMontage()
+void UEnemyAnimManagerComponent::PlayGetHitMontage()
 {
 	if (!OwningActor || !GetAnimInstance()) return;
 	if (!GetHitMontage)
@@ -96,7 +96,7 @@ void UAnimManagerComponent::PlayGetHitMontage()
 	DebugLog("Playing GetHit montage", this);
 }
 
-void UAnimManagerComponent::PlayStunMontage()
+void UEnemyAnimManagerComponent::PlayStunMontage()
 {	
 	if (!OwningActor || !GetAnimInstance()) return;
 	if (!StunMontage)
@@ -109,7 +109,7 @@ void UAnimManagerComponent::PlayStunMontage()
 	DebugLog("Playing Stun montage", this);
 }
 
-void UAnimManagerComponent::StopAnyMontage()
+void UEnemyAnimManagerComponent::StopAnyMontage()
 {
 	if (!OwningActor) return;
 	if (GetAnimInstance())
@@ -119,7 +119,7 @@ void UAnimManagerComponent::StopAnyMontage()
 	}
 }
 
-UAnimInstance* UAnimManagerComponent::GetAnimInstance()
+UAnimInstance* UEnemyAnimManagerComponent::GetAnimInstance()
 {
 	if (!OwningActor) return nullptr;
 	if (!CachedAnimInstance)

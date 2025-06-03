@@ -9,7 +9,7 @@
 #include "Components/Enemies/EnemyMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthFlashComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include "Components/Enemies/EnemyHealthComponent.h"
 #include "Components/Enemies/StatusEffectComponent.h"
@@ -28,7 +28,7 @@ AEnemyBase::AEnemyBase()
 	// --- Components
 	PlayerDetectorComponent = CreateDefaultSubobject<UPlayerDetector>(TEXT("PlayerDetectorComponent"));
 	EnemyMovementComponent = CreateDefaultSubobject<UEnemyMovementComponent>(TEXT("EnemyMovementComponent"));
-	AnimManagerComponent = CreateDefaultSubobject<UAnimManagerComponent>(TEXT("AnimManagerComponent"));
+	AnimManagerComponent = CreateDefaultSubobject<UEnemyAnimManagerComponent>(TEXT("AnimManagerComponent"));
 	BehaviorComponent = CreateDefaultSubobject<UEnemyBehaviorComponent>(TEXT("BehaviorComponent"));
 	HealthComponent = CreateDefaultSubobject<UEnemyHealthComponent>(TEXT("HealthComponent"));
 	StatusEffectComponent = CreateDefaultSubobject<UStatusEffectComponent>(TEXT("StatusEffectComponent"));
@@ -92,7 +92,7 @@ void AEnemyBase::BeginPlay()
 	}
 
 	GetCharacterMovement()->SetAvoidanceEnabled(true);      // Enable RVO/crowd avoidance
-	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1–1.0
+	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1ï¿½1.0
 	GetCharacterMovement()->AvoidanceConsiderationRadius = 150.f; // how far to consider others
 	GetCharacterMovement()->SetAvoidanceGroup(1); // can group by enemy type
 	GetCharacterMovement()->SetGroupsToAvoid(1);  // avoid enemies

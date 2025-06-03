@@ -5,20 +5,20 @@
 #include "CoreMinimal.h"
 #include "EnemyComponentBase.h"
 #include "Delegates/DelegateCombinations.h"
-#include "AnimManagerComponent.generated.h"
+#include "EnemyAnimManagerComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGetHitMontageEndSignature);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackMontageEndSignature);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UAnimManagerComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyAnimManagerComponent : public UEnemyComponentBase
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UAnimManagerComponent();
+	UEnemyAnimManagerComponent();
 
 	UFUNCTION()
 	void PlayAttackMontage(int32 Index);
