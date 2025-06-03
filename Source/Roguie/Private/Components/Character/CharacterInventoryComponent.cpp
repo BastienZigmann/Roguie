@@ -58,6 +58,16 @@ AWeaponBase* UCharacterInventoryComponent::GetCurrentWeapon() const
 	return PossessedWeapons[CurrentWeaponIndex];
 }
 
+EWeaponType UCharacterInventoryComponent::GetCurrentWeaponType() const
+{
+	if (!HasValidWeapon())
+	{
+		return EWeaponType::None;
+	}
+	DebugLog(TEXT("No weapon equipped or invalid index."), this);
+	return PossessedWeapons[CurrentWeaponIndex]->GetWeaponType();
+}
+
 void UCharacterInventoryComponent::AddOrReplaceWeapon(AWeaponBase* NewWeapon)
 {
 	// Look for first available empty slot

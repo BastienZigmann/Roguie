@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Utility/Logger.h"
+#include "Core/Types/RoguieTypes.h"
 #include "CharacterInventoryComponent.generated.h"
 
 class AWeaponBase;
@@ -24,6 +25,8 @@ public:
 	// return true if the held weapon actually cycled
 	bool CycleWeapon();
 	AWeaponBase* GetCurrentWeapon() const;
+	EWeaponType GetCurrentWeaponType() const;
+
 	void AddOrReplaceWeapon(AWeaponBase* NewWeapon);
 	AWeaponBase* GetWeaponAtIndex(int32 Index) const;
 	
