@@ -14,13 +14,15 @@ const FWeaponAnimationSet* UWeaponAnimationLibrary::GetAnimationSet(ECharacterTy
 
 	URoguieGameInstance* GameInst = Cast<URoguieGameInstance>(World->GetGameInstance());
 	if (!GameInst) return nullptr;
-
+	
 	const UDataTable* DataTable = GameInst->GetWeaponAnimationTable();
 	if (!DataTable) return nullptr;
-
+	
 	const FString RowKey = FString::Printf(TEXT("%s_%s"),
 		*UEnum::GetDisplayValueAsText(CharType).ToString(),
 		*UEnum::GetDisplayValueAsText(WeaponType).ToString());
+
+	UE_LOG(LogTemp, Warning, TEXT("Looking for weapon animation set with key: %s"), *RowKey);
 
 	return DataTable->FindRow<FWeaponAnimationSet>(*RowKey, TEXT("Weapon Animation Lookup"));
 }

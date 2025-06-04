@@ -4,8 +4,8 @@
 #include "Components/WeaponComponent.h"
 #include "Characters/RoguieCharacter.h"
 #include "Weapons/WeaponBase.h"
-#include <Data/WeaponAnimationData.h>
-#include <Utility/WeaponAnimationLibrary.h>
+#include "Data/DataTables/WeaponAnimationData.h"
+#include "Utility/WeaponAnimationLibrary.h"
 
 // Sets default values for this component's properties
 UWeaponComponent::UWeaponComponent()
@@ -13,7 +13,7 @@ UWeaponComponent::UWeaponComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	//EnableDebugMode();
+	EnableDebug();
 }
 
 
@@ -40,7 +40,7 @@ void UWeaponComponent::EquipWeapon(AWeaponBase* NewWeapon)
 	// play draw weapon animation
 	if (NewWeapon->GetDrawMontage())
 	{
-		OwningActor->PlayAnimMontage(NewWeapon->GetDrawMontage(), 1.0);
+		OwningActor->PlayAnimMontage(NewWeapon->GetDrawMontage(), NewWeapon->GetDrawMontagePlayRate());
 		DebugLog(FString::Printf(TEXT("Playing draw montage for weapon type %s"), *UEnum::GetValueAsString(NewWeapon->GetWeaponType())), this);
 	}
 	else

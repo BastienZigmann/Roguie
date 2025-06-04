@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Core/Types/RoguieTypes.h"
-#include "Data/WeaponAnimationData.h"
+#include "Data/DataTables/WeaponAnimationData.h"
 #include "Components/ActorComponent.h"
 #include "Utility/Logger.h"
 #include "WeaponComponent.generated.h"

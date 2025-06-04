@@ -3,7 +3,6 @@
 
 #include "Enemies/EnemyBase.h"
 #include "Components/WidgetComponent.h"
-#include "UI/UW_EnemyHealthBar.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Components/Enemies/EnemyMovementComponent.h"
@@ -39,57 +38,12 @@ AEnemyBase::AEnemyBase()
 	// --- Flashing effect component
 	HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
 
-	// --- Health Bar
-	HealthBarComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarComponent"));
-	HealthBarComponent->SetupAttachment(RootComponent);
-	// Adjust position above enemy
-	HealthBarComponent->SetWidgetSpace(EWidgetSpace::Screen);
-	HealthBarComponent->SetDrawSize(FVector2D(150, 15)); // Customize size
-	HealthBarComponent->SetRelativeLocation(FVector(0, 0, 120)); // Height above enemy
-	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClass(TEXT(PATH_WIDGET_HEALTHBAR));
-	if (WidgetClass.Succeeded())
-	{
-		HealthBarComponent->SetWidgetClass(WidgetClass.Class);
-	}
-	else
-	{
-		ErrorLog(TEXT("Could not find widget class at path!"), this);
-	}
-
 }
 
 // Called when the game starts or when spawned
 void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	// InitializeHealthBar
-	if (!HealthBarComponent)
-	{
-		HealthBarComponent = FindComponentByClass<UWidgetComponent>();
-		if (!HealthBarComponent)
-		{
-			ErrorLog(TEXT("HealthBarComponent NOT FOUND after rebuild!"), this);
-			return;
-		}
-	}
-
-	UUserWidget* Widget = HealthBarComponent->GetWidget();
-	if (!Widget)
-	{
-		ErrorLog(TEXT("Widget instance NOT FOUND after rebuild!"), this);
-		return;
-	}
-
-	UUW_EnemyHealthBar* EnemyHealthBar = Cast<UUW_EnemyHealthBar>(Widget);
-	if (EnemyHealthBar)
-	{
-		EnemyHealthBar->SetEnemyOwner(this);
-	}
-	else
-	{
-		ErrorLog(TEXT("Widget cast FAILED after rebuild!"), this);
-	}
 
 	GetCharacterMovement()->SetAvoidanceEnabled(true);      // Enable RVO/crowd avoidance
 	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1�1.0

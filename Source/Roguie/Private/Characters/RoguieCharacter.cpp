@@ -64,7 +64,6 @@ ARoguieCharacter::ARoguieCharacter()
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
     InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
-
 }
 
 void ARoguieCharacter::BeginPlay()
@@ -86,11 +85,14 @@ void ARoguieCharacter::BeginPlay()
 
         // Initialize dash charges
         DashCharges.Init(FDashCharge(), maxDashCharge);
+        DebugLog(FString::Printf(TEXT("Dash Charges Initialized: %d"), maxDashCharge), this);
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("DashCurve is not assigned!"));
+        ErrorLog(TEXT("DashCurve is not assigned!"), this);
     }
+
+    DebugLog("RoguieCharacter Initialized", this);
 
 }
 
@@ -123,7 +125,6 @@ void ARoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     // Ensure we're using Enhanced Input
     TObjectPtr<UEnhancedInputComponent> EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
     if (!EnhancedInputComponent) return;
-
     // Bind MoveForward and MoveRight (using Enhanced Input)
     EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveForward);
     EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveForward);
@@ -140,7 +141,6 @@ void ARoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 void ARoguieCharacter::MoveForward(const FInputActionValue& Value)
 {
-    
     float MovementValue = Value.Get<float>();
 
     const FRotator Rotation = Controller->GetControlRotation();

@@ -5,6 +5,7 @@
 #include "Core/Types/RoguieTypes.h"
 #include "WeaponAnimationData.generated.h"
 
+// Keys in the DataTable are formatted as "CharacterType_WeaponType"
 USTRUCT(BlueprintType)
 struct FWeaponAnimationSet : public FTableRowBase
 {
@@ -12,6 +13,9 @@ struct FWeaponAnimationSet : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TObjectPtr<UAnimMontage> DrawMontage;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly)
+    float DrawMontagePlayRate;
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly)
     TArray<TObjectPtr<UAnimMontage>> ComboMontages;

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Core/Types/RoguieTypes.h"
-#include "Data/WeaponAnimationData.h"
+#include "Data/DataTables/WeaponAnimationData.h"
 #include "WeaponAnimationLibrary.generated.h"
 
 UCLASS()

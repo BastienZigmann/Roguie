@@ -23,7 +23,7 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetGenerateOverlapEvents(false);
 	WeaponMesh->SetCanEverAffectNavigation(false);
 	WeaponMesh->SetVisibility(true);
-
+	EnableDebug();
 }
 
 void AWeaponBase::BeginPlay()
@@ -59,6 +59,7 @@ void AWeaponBase::AttachWeaponToHandSocket(ARoguieCharacter* Character)
 
 void AWeaponBase::InitializeAnimationSet()
 {
+	DebugLog("Initializing animation set for weapon type", this);
 	ARoguieCharacter* Character = Cast<ARoguieCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	const FWeaponAnimationSet* AnimSet = UWeaponAnimationLibrary::GetAnimationSet(
 		Character->GetCharacterType(), GetWeaponType());
@@ -101,4 +102,13 @@ UAnimMontage* AWeaponBase:: GetDrawMontage() const
 		return AnimationSet.DrawMontage;
 	}
 	return nullptr;
+}
+
+float AWeaponBase::GetDrawMontagePlayRate() const
+{
+	if (AnimationSet.DrawMontagePlayRate > 0.0f)
+	{
+		return AnimationSet.DrawMontagePlayRate;
+	}
+	return 1.0f; // Default play rate if not set
 }

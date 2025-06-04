@@ -6,7 +6,7 @@
 #include "Weapons/WeaponStatsBlock.h"
 #include "GameFramework/Actor.h"
 #include "Core/Types/RoguieTypes.h"
-#include "Data/WeaponAnimationData.h"
+#include "Data/DataTables/WeaponAnimationData.h"
 #include "Utility/Logger.h"
 #include "WeaponBase.generated.h"
 
@@ -42,6 +42,7 @@ public:
 	FName GetWeaponSocketName() const;
 	UAnimMontage* GetComboMontage(int32 index) const;
 	UAnimMontage* GetDrawMontage() const;
+	float GetDrawMontagePlayRate() const;
 
 protected:
 

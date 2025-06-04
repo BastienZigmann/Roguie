@@ -114,7 +114,7 @@ private:
 	TObjectPtr<class UWeaponComponent> WeaponComponent;
 
 	// ------- Weapons
-	UPROPERTY(EditDefaultsOnly, Category = "Weapons")
+	UPROPERTY(EditDefaultsOnly, Category = "Roguie|Weapons")
 	TSubclassOf<AWeaponBase> DefaultSwordClass;
 
 
