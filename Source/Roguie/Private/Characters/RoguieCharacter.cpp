@@ -64,6 +64,8 @@ ARoguieCharacter::ARoguieCharacter()
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
     InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+
+    // EnableDebug();
 }
 
 void ARoguieCharacter::BeginPlay()
@@ -355,7 +357,15 @@ void ARoguieCharacter::StartDash()
     float playRate = montageDuration / dashDuration;
     dashTimeline.SetPlayRate(playRate);
     if (DashMontage)
-        PlayAnimMontage(DashMontage, playRate);
+    {
+        DebugLog(FString::Printf(TEXT("Playing Dash Montage with play rate: %f"), playRate), this);
+        float ret = PlayAnimMontage(DashMontage, playRate);
+        DebugLog(FString::Printf(TEXT("PlayAnimMontage returned: %f"), ret), this);
+    }
+    else
+    {
+        ErrorLog(TEXT("Dash Montage is not assigned!"), this);
+    }
     dashTimeline.PlayFromStart();
 
 }

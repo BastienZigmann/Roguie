@@ -23,7 +23,7 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetGenerateOverlapEvents(false);
 	WeaponMesh->SetCanEverAffectNavigation(false);
 	WeaponMesh->SetVisibility(true);
-	EnableDebug();
+	// EnableDebug();
 }
 
 void AWeaponBase::BeginPlay()

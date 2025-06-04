@@ -7,6 +7,8 @@
 #include "Engine/DataAsset.h"
 #include "EnemyDataAsset.generated.h"
 
+// TODO Add animation blueprint here then affect it in EnemyBase
+
 /**
  * 
  */
@@ -34,13 +36,7 @@ public:
 	float BodyDamage = 100.f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
-	float HitDamage = 100.f;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
 	float GlobalAttackCooldown = 2.f; // Cooldown beetween any attack
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
-	float AttackRange = 0.f; // 0 if not ranged
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
 	float KnockbackThreshhold = 10.f; // how much damage needed to trigger a knockback
