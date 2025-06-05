@@ -39,7 +39,7 @@ private:
 	TMap<int32, float> AttackTypeLastUseMap;
 	int32 CurrentAttackIndex = INDEX_NONE;
 	UPROPERTY(EditAnywhere, Category = "Combat|Cooldowns", meta = (AllowPrivateAccess = "true"))
-	float GlobalCooldownDuration = 2.0f; // TODO use data asset cooldown duration
+	float GlobalCooldownDuration; // TODO use data asset cooldown duration
 	float GlobalCooldownLastAttack = 0.0f;
 	void StartAttackCooldown(int32 Index);
 	void StartGlobalCooldown();

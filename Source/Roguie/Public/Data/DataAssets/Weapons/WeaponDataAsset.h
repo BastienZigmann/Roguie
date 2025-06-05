@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include "Weapons/WeaponBase.h"
 #include "Engine/DataAsset.h"
-#include "Weapons/WeaponStatsBlock.h" // Include your struct
+#include "Core/Types/WeaponTypes.h" // Include your struct
 #include "WeaponDataAsset.generated.h"
 
 UCLASS(BlueprintType)

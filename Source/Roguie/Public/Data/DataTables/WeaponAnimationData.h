@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
 #include "WeaponAnimationData.generated.h"
 
 // Keys in the DataTable are formatted as "CharacterType_WeaponType"

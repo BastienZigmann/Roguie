@@ -1,8 +1,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponTypes.generated.h"
 
-#include "WeaponStatsBlock.generated.h"
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	Sword       UMETA(DisplayName = "Sword"),
+	Spear       UMETA(DisplayName = "Spear"),
+	None        UMETA(DisplayName = "None")
+};
 
 USTRUCT(BlueprintType)
 struct FWeaponStatBlock // TODO: Core/Types

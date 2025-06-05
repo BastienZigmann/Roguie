@@ -5,7 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Utility/Logger.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
+#include "Core/Types/WeaponTypes.h"
 #include "CharacterInventoryComponent.generated.h"
 
 class AWeaponBase;

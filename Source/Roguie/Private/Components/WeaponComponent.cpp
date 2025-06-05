@@ -5,6 +5,7 @@
 #include "Characters/RoguieCharacter.h"
 #include "Weapons/WeaponBase.h"
 #include "Data/DataTables/WeaponAnimationData.h"
+#include "Core/Types/WeaponTypes.h"
 #include "Utility/WeaponAnimationLibrary.h"
 
 // Sets default values for this component's properties

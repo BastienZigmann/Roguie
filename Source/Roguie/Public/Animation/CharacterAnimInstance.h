@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
+#include "Core/Types/WeaponTypes.h"
 #include "CharacterAnimInstance.generated.h"
 
 class ARoguieCharacter;

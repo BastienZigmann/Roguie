@@ -3,9 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/WeaponStatsBlock.h"
+#include "Core/Types/WeaponTypes.h"
 #include "GameFramework/Actor.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
+#include "Core/Types/WeaponTypes.h"
 #include "Data/DataTables/WeaponAnimationData.h"
 #include "Utility/Logger.h"
 #include "WeaponBase.generated.h"

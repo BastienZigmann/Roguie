@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
 #include "Data/DataTables/WeaponAnimationData.h"
 #include "Components/ActorComponent.h"
 #include "Utility/Logger.h"

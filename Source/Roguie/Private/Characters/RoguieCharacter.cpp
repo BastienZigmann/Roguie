@@ -27,44 +27,22 @@ ARoguieCharacter::ARoguieCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	// Basic movement parameters
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->RotationRate = FRotator(0.f, 2000.f, 0.f); // Way faster rotation
-	bUseControllerRotationYaw = false;
-
-    // Camera boom (SpringArm)
-    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-    CameraBoom->SetupAttachment(RootComponent);
-    CameraBoom->TargetArmLength = 800.f;
-    CameraBoom->SetRelativeRotation(FRotator(-65.f, 0.f, 0.f));
-    CameraBoom->bUsePawnControlRotation = false;
-    CameraBoom->bDoCollisionTest = false;
-
-    // Camera
-    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
-    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
-    FollowCamera->bUsePawnControlRotation = false;
-
-    // Create and attach the skeletal mesh
-    GetMesh()->SetupAttachment(RootComponent);
-    GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -90.f)); // Adjust height
-    GetMesh()->SetRelativeRotation(FRotator(0.f, -90.f, 0.f)); // Adjust facing direction
-
-    bUseControllerRotationYaw = false; // Character rotation is controlled by movement
-    bUseControllerRotationPitch = false;
-    bUseControllerRotationRoll = false;
-
-    GetCharacterMovement()->bOrientRotationToMovement = true;
-    lastInputDirection = FVector::ZeroVector;
-
+    
     // Components initialization
     HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
     CharacterStateComponent = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("CharacterStateComponent"));
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
     InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
     WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
-
+    
+    // Camera
+    CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+    FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    
+    CameraBoom->SetupAttachment(RootComponent);
+    FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+    GetMesh()->SetupAttachment(RootComponent);
+	
     // EnableDebug();
 }
 
@@ -72,7 +50,13 @@ void ARoguieCharacter::BeginPlay()
 {
     Super::BeginPlay();
     
-    if (DashCurve)
+    if (!CharacterDataAsset)
+    {
+        ErrorLog(TEXT("CharacterDataAsset is not assigned!"), this);
+        return;
+    }
+
+    if (CharacterDataAsset->DashCurve)
     {
         // Bind function that updates location during dash
         FOnTimelineFloat DashProgressFunction;
@@ -82,17 +66,37 @@ void ARoguieCharacter::BeginPlay()
         FOnTimelineEvent DashFinishedFunction{};
         DashFinishedFunction.BindUFunction(this, FName("DashFinished"));
 
-        dashTimeline.AddInterpFloat(DashCurve, DashProgressFunction);
+        dashTimeline.AddInterpFloat(CharacterDataAsset->DashCurve, DashProgressFunction);
         dashTimeline.SetTimelineFinishedFunc(DashFinishedFunction);
 
         // Initialize dash charges
-        DashCharges.Init(FDashCharge(), maxDashCharge);
-        DebugLog(FString::Printf(TEXT("Dash Charges Initialized: %d"), maxDashCharge), this);
+        DashCharges.Init(FDashCharge(), CharacterDataAsset->maxDashCharge);
+        DebugLog(FString::Printf(TEXT("Dash Charges Initialized: %d"), CharacterDataAsset->maxDashCharge), this);
     }
     else
     {
         ErrorLog(TEXT("DashCurve is not assigned!"), this);
     }
+
+    // Basic movement parameters
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->RotationRate = FRotator(0.f, 2000.f, 0.f); // Way faster rotation
+    GetCharacterMovement()->MaxWalkSpeed = CharacterDataAsset->MovementSpeed;
+	bUseControllerRotationYaw = false;
+
+    // Camera
+    CameraBoom->TargetArmLength = 800.f;
+    CameraBoom->SetRelativeRotation(FRotator(-65.f, 0.f, 0.f));
+    CameraBoom->bUsePawnControlRotation = false;
+    CameraBoom->bDoCollisionTest = false;
+    FollowCamera->bUsePawnControlRotation = false;
+
+    bUseControllerRotationYaw = false; // Character rotation is controlled by movement
+    bUseControllerRotationPitch = false;
+    bUseControllerRotationRoll = false;
+
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    lastInputDirection = FVector::ZeroVector;
 
     DebugLog("RoguieCharacter Initialized", this);
 
@@ -113,7 +117,7 @@ void ARoguieCharacter::PossessedBy(AController* NewController)
 
             if (InputSubsystem)
             {
-                InputSubsystem->AddMappingContext(InputMappingContext, 0);
+                InputSubsystem->AddMappingContext(CharacterDataAsset->InputMappingContext, 0);
             }
         }
     }
@@ -128,13 +132,13 @@ void ARoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
     TObjectPtr<UEnhancedInputComponent> EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
     if (!EnhancedInputComponent) return;
     // Bind MoveForward and MoveRight (using Enhanced Input)
-    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveForward);
-    EnhancedInputComponent->BindAction(MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveForward);
-    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveRight);
-    EnhancedInputComponent->BindAction(MoveRightAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveRight);
-    EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::StartDash);
-    EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ARoguieCharacter::HandleAttackInput);
-    EnhancedInputComponent->BindAction(InventoryInput, ETriggerEvent::Started, this, &ARoguieCharacter::HandleInventoryInput);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveForward);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveForward);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveRightAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveRight);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveRightAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveRight);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->DashAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::StartDash);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->AttackAction, ETriggerEvent::Started, this, &ARoguieCharacter::HandleAttackInput);
+    EnhancedInputComponent->BindAction(CharacterDataAsset->InventoryInput, ETriggerEvent::Started, this, &ARoguieCharacter::HandleInventoryInput);
 }
 
 // *********************************************
@@ -219,7 +223,7 @@ void ARoguieCharacter::HandleInventoryInput()
 		else
 		{
             UE_LOG(LogTemp, Warning, TEXT("No weapon possessed, Adding sword !"));
-            AWeaponBase* Sword = GetWorld()->SpawnActor<AWeaponBase>(DefaultSwordClass);
+            AWeaponBase* Sword = GetWorld()->SpawnActor<AWeaponBase>(GetDataAsset()->DefaultSwordClass);
             InventoryComponent->AddOrReplaceWeapon(Sword);
 		}
     }
@@ -318,8 +322,8 @@ void ARoguieCharacter::StartDash()
 {
     if (GetCharacterStateComponent()->IsDead()) return;
     if (!PlayerController) return;
-    if (dashDistance == 0) return;
-    if (!DashCurve) return;
+    if (GetDataAsset()->dashDistance == 0) return;
+    if (!GetDataAsset()->DashCurve) return;
     
     int32 AvailableDashIndex = GetAvailableDashChargeIndex();
     if (AvailableDashIndex == INDEX_NONE) return;
@@ -332,7 +336,7 @@ void ARoguieCharacter::StartDash()
     GetWorldTimerManager().SetTimer(
         DashCharges[AvailableDashIndex].CooldownTimer,
         FTimerDelegate::CreateUObject(this, &ARoguieCharacter::ResetDashCharge, AvailableDashIndex),
-        dashCooldown,
+        GetDataAsset()->dashCooldown,
         false
     );
 
@@ -342,7 +346,7 @@ void ARoguieCharacter::StartDash()
     direction = direction.GetSafeNormal();
 
     dashStartLocation = GetActorLocation();
-    dashEndLocation = GetActorLocation() + direction * dashDistance;
+    dashEndLocation = GetActorLocation() + direction * GetDataAsset()->dashDistance;
     dashEndLocation = FindSafeDashLocation(dashStartLocation, dashEndLocation);
 
     // Rotate character
@@ -353,13 +357,13 @@ void ARoguieCharacter::StartDash()
     //GetWorldTimerManager().SetTimer(DashCooldownTimer, this, &AMyCharacter::ResetDash, DashCooldown, false);
 
 	GetCharacterStateComponent()->EnterDashingState();
-    float montageDuration = DashMontage?DashMontage->GetPlayLength():1;
-    float playRate = montageDuration / dashDuration;
+    float montageDuration = GetDataAsset()->DashMontage?GetDataAsset()->DashMontage->GetPlayLength():1;
+    float playRate = montageDuration / GetDataAsset()->dashDuration;
     dashTimeline.SetPlayRate(playRate);
-    if (DashMontage)
+    if (GetDataAsset()->DashMontage)
     {
         DebugLog(FString::Printf(TEXT("Playing Dash Montage with play rate: %f"), playRate), this);
-        float ret = PlayAnimMontage(DashMontage, playRate);
+        float ret = PlayAnimMontage(GetDataAsset()->DashMontage, playRate);
         DebugLog(FString::Printf(TEXT("PlayAnimMontage returned: %f"), ret), this);
     }
     else
@@ -391,7 +395,7 @@ void ARoguieCharacter::DashFinished()
 float ARoguieCharacter::GetDashCooldownProgress() const
 {
     //return 0;
-    return GetWorldTimerManager().GetTimerElapsed(dashCooldownTimer) / dashCooldown;
+    return GetWorldTimerManager().GetTimerElapsed(dashCooldownTimer) / GetDataAsset()->dashCooldown;
 }
 
 // *********************************************

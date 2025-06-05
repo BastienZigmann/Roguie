@@ -1,7 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Utility/WeaponAnimationLibrary.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
+#include "Core/Types/WeaponTypes.h"
 #include "RoguieGameInstance.h"
 
 const FWeaponAnimationSet* UWeaponAnimationLibrary::GetAnimationSet(ECharacterType CharType, EWeaponType WeaponType)

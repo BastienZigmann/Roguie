@@ -24,6 +24,14 @@ void UCharacterInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	OwningActor = Cast<ARoguieCharacter>(GetOwner());
+	if (!OwningActor)
+	{
+		ErrorLog(TEXT("Owning actor is not a RoguieCharacter!"), this);
+		return;
+	}
+
+	OwningActor->GetDataAsset()->MaxWeaponSlots = MaxWeapons;
+
 }
 
 bool UCharacterInventoryComponent::CycleWeapon()

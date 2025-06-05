@@ -6,9 +6,10 @@
 #include "GameFramework/Character.h"
 #include "Components/TimelineComponent.h"
 #include "Delegates/DelegateCombinations.h"
-#include "Core/Types/RoguieTypes.h"
+#include "Core/Types/CharacterTypes.h"
 #include "Core/Types/CombatTypes.h"
 #include "Utility/Logger.h"
+#include "Data/DataAssets/Characters/CharacterDataAsset.h"
 #include "RoguieCharacter.generated.h"
 
 class UInputAction;
@@ -35,8 +36,8 @@ public:
 	ARoguieCharacter();
 
 	// Movement functions
-	void MoveRight(const FInputActionValue& Value);
 	void MoveForward(const FInputActionValue& Value);
+	void MoveRight(const FInputActionValue& Value);
 	void EndMoveForward();
 	void EndMoveRight();
 	void HandleAttackInput();
@@ -44,7 +45,8 @@ public:
 
 	void BeginPlay();
 	void PossessedBy(AController* NewController);
-	ECharacterType GetCharacterType() const { return CharacterType; };
+	UCharacterDataAsset* GetDataAsset() const { return CharacterDataAsset; }
+	ECharacterType GetCharacterType() const { return GetDataAsset()->CharacterType; };
 
 	// Dash or dodge
 	void StartDash();
@@ -60,30 +62,6 @@ public:
 	TObjectPtr<class UCharacterCombatComponent>& GetCombatComponent();
 	TObjectPtr<class UCharacterInventoryComponent>& GetInventoryComponent();
 	TObjectPtr<class UWeaponComponent>& GetWeaponComponent();
-public:
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<class UInputMappingContext> InputMappingContext;
-
-	//InputActions
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<UInputAction> MoveForwardAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<UInputAction> MoveRightAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<UInputAction> DashAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<UInputAction> AttackAction;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Input")
-	TObjectPtr<UInputAction> InventoryInput;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Roguie|Animation Montage")
-	TObjectPtr<UAnimMontage> DashMontage;
-
 
 protected:	
 
@@ -92,10 +70,11 @@ protected:
 
 private:
 
-	TObjectPtr<APlayerController> PlayerController;
-	UPROPERTY(EditAnywhere, Category = "Roguie|Character", meta = (AllowPrivateAccess = "true"))
-	ECharacterType CharacterType;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DataAsset", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCharacterDataAsset> CharacterDataAsset;
 
+	TObjectPtr<APlayerController> PlayerController;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class USpringArmComponent> CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Camera", meta = (AllowPrivateAccess = "true"))
@@ -113,34 +92,18 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UWeaponComponent> WeaponComponent;
 
-	// ------- Weapons
-	UPROPERTY(EditDefaultsOnly, Category = "Roguie|Weapons")
-	TSubclassOf<AWeaponBase> DefaultSwordClass;
-
-
-	// ------- Dash
+	// ------- TODO : Dash Component
 	FVector lastInputDirection;
 	FTimerHandle dashCooldownTimer;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Roguie|Movement|Dash")
-	float dashCooldown = 2.5;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Roguie|Movement|Dash")
-	float dashDuration = 0.3f;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Roguie|Movement|Dash")
-	int maxDashCharge = 2;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Roguie|Movement|Dash")
-	float dashDistance = 800.f;
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Roguie|Movement|Dash")
-	TObjectPtr<UCurveFloat> DashCurve;
+	FTimeline dashTimeline;
+	FVector dashStartLocation;
+	FVector dashEndLocation;
 
 	// Container for dash charges
 	TArray<FDashCharge> DashCharges;
 	FVector FindSafeDashLocation(FVector desiredStartLocation, FVector desiredEndLocation);
 	int32 GetAvailableDashChargeIndex() const;
 	void ResetDashCharge(int32 DashChargeIndex);
-
-	FTimeline dashTimeline;
-	FVector dashStartLocation;
-	FVector dashEndLocation;
 
 	UFUNCTION()
 	void DashUpdate(float Alpha);

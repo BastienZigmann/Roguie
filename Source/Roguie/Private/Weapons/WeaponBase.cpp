@@ -6,7 +6,6 @@
 #include <Utility/WeaponAnimationLibrary.h>
 #include <Characters/RoguieCharacter.h>
 #include <Kismet/GameplayStatics.h>
-//#include "Weapons/WeaponStatsBlock.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()

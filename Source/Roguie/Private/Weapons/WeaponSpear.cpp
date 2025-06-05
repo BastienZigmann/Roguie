@@ -2,6 +2,7 @@
 
 
 #include "Weapons/WeaponSpear.h"
+#include "Core/Types/WeaponTypes.h"
 
 AWeaponSpear::AWeaponSpear()
 {
