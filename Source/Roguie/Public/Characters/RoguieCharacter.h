@@ -17,10 +17,13 @@ struct FInputActionValue;
 class AWeaponBase;
 class AWeaponSword;
 class UHealthFlashComponent;
+class UHealthComponent;
 class UCharacterStateComponent;
 class UCharacterCombatComponent;
 class UCharacterInventoryComponent;
 class UCharacterWeaponComponent;
+class USpringArmComponent;
+class UCameraComponent;
 
 USTRUCT()
 struct FDashCharge
@@ -63,6 +66,7 @@ public:
 	float GetDashCooldownProgress() const;
 
 	UHealthFlashComponent* GetHealthFlashComponent() const { return HealthFlashComponent; }
+	UHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	UCharacterStateComponent* GetCharacterStateComponent() const { return CharacterStateComponent; }
 	UCharacterCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
@@ -81,21 +85,23 @@ private:
 	TObjectPtr<APlayerController> PlayerController;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Camera", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class USpringArmComponent> CameraBoom;
+	TObjectPtr<USpringArmComponent> CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Camera", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCameraComponent> FollowCamera;
+	TObjectPtr<UCameraComponent> FollowCamera;
 
 	// Custom components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UHealthFlashComponent> HealthFlashComponent;
+	TObjectPtr<UHealthFlashComponent> HealthFlashComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCharacterStateComponent> CharacterStateComponent;	
+	TObjectPtr<UHealthComponent> HealthComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCharacterCombatComponent> CombatComponent;
+	TObjectPtr<UCharacterStateComponent> CharacterStateComponent;	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCharacterInventoryComponent> InventoryComponent;
+	TObjectPtr<UCharacterCombatComponent> CombatComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UCharacterWeaponComponent> WeaponComponent;
+	TObjectPtr<UCharacterInventoryComponent> InventoryComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCharacterWeaponComponent> WeaponComponent;
 
 	// ------- TODO : Dash Component
 	FVector lastInputDirection;

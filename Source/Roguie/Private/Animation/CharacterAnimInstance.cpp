@@ -31,7 +31,8 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		FVector Velocity = Character->GetVelocity();
 		// We're only interested in horizontal CharacterSpeed for most movement animations
 		CharacterSpeed = FVector(Velocity.X, Velocity.Y, 0.0f).Size();
-        WeaponType = Character->GetInventoryComponent()->GetCurrentWeaponType();
+		if (Character->GetInventoryComponent())
+        	WeaponType = Character->GetInventoryComponent()->GetCurrentWeaponType();
 	}
 }
 

@@ -17,6 +17,7 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 	CurrentWeaponIndex = INDEX_NONE;
 	PossessedWeapons.SetNum(MaxWeapons);
 
+	EnableDebug();
 }
 
 // Called when the game starts
@@ -26,10 +27,12 @@ void UCharacterInventoryComponent::BeginPlay()
 
 	OwningCharacter->GetDataAsset()->MaxWeaponSlots = MaxWeapons;
 
+	DebugLog(FString::Printf(TEXT("CharacterInventoryComponent initialized with %d max weapon slots."), MaxWeapons), this);
 }	
 
 bool UCharacterInventoryComponent::CycleWeapon()
 {
+	if (!OwningCharacter) return false;
 	if (MaxWeapons == 0 || PossessedWeapons.Num() == 0)
 		return false;
 
@@ -37,14 +40,22 @@ bool UCharacterInventoryComponent::CycleWeapon()
 		? GetNextValidWeaponIndex(0)
 		: GetNextValidWeaponIndex(CurrentWeaponIndex);
 
+	DebugLog("Next valid weapon index: " + FString::FromInt(nextIndex), this);
+
 	if (nextIndex == INDEX_NONE)
 		return false;
 
 	CurrentWeaponIndex = nextIndex;
 	// Actually equip the weapon
-	if (OwningCharacter && OwningCharacter->GetWeaponComponent())
+	if (OwningCharacter->GetWeaponComponent())
 	{
+		DebugLog(FString::Printf(TEXT("Cycling to weapon at index %d: %s"), CurrentWeaponIndex, *PossessedWeapons[CurrentWeaponIndex]->GetName()), this);
 		OwningCharacter->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
+	}
+	else
+	{
+		ErrorLog(TEXT("WeaponComponent is null, cannot equip weapon."), this);
+		return false;
 	}
 	return true;
 }
@@ -53,7 +64,7 @@ AWeaponBase* UCharacterInventoryComponent::GetCurrentWeapon() const
 {
 	if (!HasValidWeapon())
 	{
-		DebugLog(TEXT("No weapon equipped or invalid index."), this);
+		DebugLog(TEXT("GetCurrentWeapon No weapon equipped or invalid index."), this);
 		return nullptr;
 	}
 
@@ -64,31 +75,35 @@ EWeaponType UCharacterInventoryComponent::GetCurrentWeaponType() const
 {
 	if (!HasValidWeapon())
 	{
+		DebugLog(TEXT("GetCurrentWeaponType No weapon equipped or invalid index."), this);
 		return EWeaponType::None;
 	}
-	DebugLog(TEXT("No weapon equipped or invalid index."), this);
 	return PossessedWeapons[CurrentWeaponIndex]->GetWeaponType();
 }
 
 void UCharacterInventoryComponent::AddOrReplaceWeapon(AWeaponBase* NewWeapon)
 {
+	if (!NewWeapon || NewWeapon->GetWeaponType() == EWeaponType::None)
+	{
+		DebugLog(TEXT("Attempted to add a null weapon."), this);
+		return;
+	}
+
+
 	// Look for first available empty slot
 	for (int32 i = 0; i < PossessedWeapons.Num(); ++i)
 	{
 		if (PossessedWeapons[i] == nullptr)
 		{
+			// Empty slot found
 			PossessedWeapons[i] = NewWeapon;
 			DebugLog(FString::Printf(TEXT("Added weapon to slot %d"), i), this);
 			PossessedWeapons[i]->AttachWeaponToHolsterSocket(OwningCharacter); // instant holster current weapon
 
 			if (CurrentWeaponIndex == INDEX_NONE)
 			{
-				CurrentWeaponIndex = i;
-				if (OwningCharacter && OwningCharacter->GetWeaponComponent())
-				{
-					DebugLog(TEXT("New Weapon detected -> equipping it"), this);
-					OwningCharacter->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
-				}
+				DebugLog("NoHeld Weapon -> Cycling to new weapon.", this);
+				CycleWeapon(); // Equip the new weapon if no current weapon is equipped
 			}
 			return;
 		}
@@ -109,7 +124,7 @@ void UCharacterInventoryComponent::AddOrReplaceWeapon(AWeaponBase* NewWeapon)
 	}
 	else
 	{
-		DebugLog(TEXT("Inventory is full and no weapon equipped � cannot add new weapon."), this);
+		DebugLog(TEXT("Inventory is full and no weapon equipped, cannot add new weapon."), this);
 	}
 }
 

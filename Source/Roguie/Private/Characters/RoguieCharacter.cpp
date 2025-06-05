@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/HealthFlashComponent.h"
+#include "Components/HealthComponent.h"
 #include "Components/Character/CharacterStateComponent.h"
 #include "Components/Character/CharacterCombatComponent.h"
 #include "Components/Character/CharacterInventoryComponent.h"
@@ -30,6 +31,7 @@ ARoguieCharacter::ARoguieCharacter()
     
     // Components initialization
     HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
+    HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
     CharacterStateComponent = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("CharacterStateComponent"));
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
     InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
@@ -77,6 +79,8 @@ void ARoguieCharacter::BeginPlay()
     {
         ErrorLog(TEXT("DashCurve is not assigned!"), this);
     }
+
+    if (GetHealthComponent()) GetHealthComponent()->Initialize(CharacterDataAsset->MaxHealth);
 
     // Basic movement parameters
     GetCharacterMovement()->bOrientRotationToMovement = true;

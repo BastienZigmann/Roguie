@@ -18,8 +18,9 @@ void UAnimNotify_PlayerWeaponSwitch::Notify(USkeletalMeshComponent* MeshComp, UA
     AActor* Owner = MeshComp->GetOwner();
     if (!Owner) return;
 
-    if (ARoguieCharacter* Player = Cast<ARoguieCharacter>(Owner))
+    if (ARoguieCharacter* Player = Cast<ARoguieCharacter>(MeshComp->GetOwner()))
     {
+        UE_LOG(LogTemp, Warning, TEXT("UAnimNotify_PlayerWeaponSwitch triggered for Player: %s"), *Player->GetName());
         Player->GetWeaponComponent()->WeaponSocketSwitch();
     }
     else

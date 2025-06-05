@@ -12,6 +12,7 @@ public:
 	virtual void DisableDebug() { bDebugMode = false; }
 	virtual bool IsDebugOn() const { return bDebugMode; }
 
+	// /!\ Use the macro instead of this !!
 	void DebugLog(const FString& Msg, const UObject* Context = nullptr) const;
 	void ErrorLog(const FString& Msg, const UObject* Context = nullptr) const;
 
