@@ -16,6 +16,11 @@ class UInputAction;
 struct FInputActionValue;
 class AWeaponBase;
 class AWeaponSword;
+class UHealthFlashComponent;
+class UCharacterStateComponent;
+class UCharacterCombatComponent;
+class UCharacterInventoryComponent;
+class UCharacterWeaponComponent;
 
 USTRUCT()
 struct FDashCharge
@@ -57,13 +62,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Dash")
 	float GetDashCooldownProgress() const;
 
-	TObjectPtr<class UHealthFlashComponent>& GetHealthFlashComponent();
-	TObjectPtr<class UCharacterStateComponent>& GetCharacterStateComponent();
-	TObjectPtr<class UCharacterCombatComponent>& GetCombatComponent();
-	TObjectPtr<class UCharacterInventoryComponent>& GetInventoryComponent();
-	TObjectPtr<class UWeaponComponent>& GetWeaponComponent();
+	UHealthFlashComponent* GetHealthFlashComponent() const { return HealthFlashComponent; }
+	UCharacterStateComponent* GetCharacterStateComponent() const { return CharacterStateComponent; }
+	UCharacterCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	UCharacterInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	UCharacterWeaponComponent* GetWeaponComponent() const { return WeaponComponent; }
 
-protected:	
+protected:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -90,7 +95,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<class UCharacterInventoryComponent> InventoryComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UWeaponComponent> WeaponComponent;
+	TObjectPtr<class UCharacterWeaponComponent> WeaponComponent;
 
 	// ------- TODO : Dash Component
 	FVector lastInputDirection;

@@ -19,8 +19,6 @@ void UCharacterStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<ARoguieCharacter>(GetOwner());
-	
 }
 
 void UCharacterStateComponent::EnterIdleState() 
@@ -65,7 +63,7 @@ void UCharacterStateComponent::EnterDeadState()
 
 bool UCharacterStateComponent::CanAttack() const
 {
-	return OwningActor->GetInventoryComponent()->HaveAnyWeapon() && CurrentState != ECharacterState::Dashing;
+	return OwningCharacter->GetInventoryComponent()->HaveAnyWeapon() && CurrentState != ECharacterState::Dashing;
 }
 
 void UCharacterStateComponent::EnableDebug()

@@ -4,7 +4,7 @@
 #include "CoreMinimal.h"
 #include "Data/DataTables/WeaponAnimationData.h"
 #include "Components/Character/CharacterStateComponent.h"
-#include "Components/WeaponComponent.h"
+#include "Components/Character/CharacterWeaponComponent.h"
 #include "Weapons/WeaponBase.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/BoxComponent.h"
@@ -27,17 +27,15 @@ void UCharacterCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<ARoguieCharacter>(GetOwner());
-
 	SetupAttackHitBoxes();
 	
 }
 
 void UCharacterCombatComponent::StartAttack()
 {
-	if (OwningActor->GetCharacterStateComponent()->IsDead()) return;
-	if (!OwningActor->GetCharacterStateComponent()->CanAttack()) return;
-	if (OwningActor->GetCharacterStateComponent()->IsAttacking())
+	if (OwningCharacter->GetCharacterStateComponent()->IsDead()) return;
+	if (!OwningCharacter->GetCharacterStateComponent()->CanAttack()) return;
+	if (OwningCharacter->GetCharacterStateComponent()->IsAttacking())
 	{
 		DebugLog(TEXT("Already attacking"), this);
 		if (AttackBuffer.bCanBuffer)
@@ -50,18 +48,18 @@ void UCharacterCombatComponent::StartAttack()
 
 	GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer);
 
-	OwningActor->GetCharacterStateComponent()->EnterAttackingState();
+	OwningCharacter->GetCharacterStateComponent()->EnterAttackingState();
 	UAnimMontage* NextComboMontage = GetNextComboMontage();
 	if (NextComboMontage)
 	{
-		OwningActor->PlayAnimMontage(NextComboMontage, OwningActor->GetWeaponComponent()->GetAttackAnimationRate());
-		CurrentAttackCombo = (CurrentAttackCombo + 1) % OwningActor->GetWeaponComponent()->GetMaxEquippedWeaponCombo();
+		OwningCharacter->PlayAnimMontage(NextComboMontage, OwningCharacter->GetWeaponComponent()->GetAttackAnimationRate());
+		CurrentAttackCombo = (CurrentAttackCombo + 1) % OwningCharacter->GetWeaponComponent()->GetMaxEquippedWeaponCombo();
 	}
 }
 
 void UCharacterCombatComponent::EndAttackMove() // Called from ABP
 {
-	OwningActor->GetCharacterStateComponent()->EnterIdleState();
+	OwningCharacter->GetCharacterStateComponent()->EnterIdleState();
 
 	if (AttackBuffer.bInputReceived)
 	{
@@ -92,13 +90,13 @@ void UCharacterCombatComponent::OpenNextAttackBuffer() // Called from ABP
 void UCharacterCombatComponent::ResetComboState()
 {
 	GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer);
-	OwningActor->GetCharacterStateComponent()->EnterIdleState();
+	OwningCharacter->GetCharacterStateComponent()->EnterIdleState();
 	CurrentAttackCombo = 0;
 }
 
 void UCharacterCombatComponent::TriggerSlashHit()
 {
-	if (!OwningActor->GetCharacterStateComponent()->IsAttacking()) return;
+	if (!OwningCharacter->GetCharacterStateComponent()->IsAttacking()) return;
 	if (!SlashAttackCollisionBox) return;
 
 	SlashAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -117,7 +115,7 @@ void UCharacterCombatComponent::TriggerSlashHit()
 
 void UCharacterCombatComponent::TriggerStabHit()
 {
-	if (!OwningActor->GetCharacterStateComponent()->IsAttacking()) return;
+	if (!OwningCharacter->GetCharacterStateComponent()->IsAttacking()) return;
 	if (!StabAttackCollisionBox) return;
 
 	StabAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -141,17 +139,17 @@ void UCharacterCombatComponent::ApplyWeaponAnimationSet(const FWeaponAnimationSe
 
 UAnimMontage* UCharacterCombatComponent::GetNextComboMontage() const
 {
-	if (OwningActor && OwningActor->GetWeaponComponent() && OwningActor->GetWeaponComponent()->GetEquippedWeapon())
-		return OwningActor->GetWeaponComponent()->GetEquippedWeapon()->GetComboMontage(CurrentAttackCombo);
+	if (OwningCharacter && OwningCharacter->GetWeaponComponent() && OwningCharacter->GetWeaponComponent()->GetEquippedWeapon())
+		return OwningCharacter->GetWeaponComponent()->GetEquippedWeapon()->GetComboMontage(CurrentAttackCombo);
 	return nullptr;
 }
 
 void UCharacterCombatComponent::SetupAttackHitBoxes()
 {
-	if (OwningActor)
+	if (OwningCharacter)
 	{
 		TArray<UBoxComponent*> BoxComponents;
-		OwningActor->GetComponents(BoxComponents);
+		OwningCharacter->GetComponents(BoxComponents);
 
 		for (UBoxComponent* Comp : BoxComponents)
 		{

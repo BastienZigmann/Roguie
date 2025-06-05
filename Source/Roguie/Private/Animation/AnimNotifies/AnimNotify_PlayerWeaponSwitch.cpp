@@ -3,7 +3,7 @@
 
 #include "Animation/AnimNotifies/AnimNotify_PlayerWeaponSwitch.h"
 #include "Characters/RoguieCharacter.h"
-#include "Components/WeaponComponent.h"
+#include "Components/Character/CharacterWeaponComponent.h"
 
 FString UAnimNotify_PlayerWeaponSwitch::GetNotifyName_Implementation() const
 {

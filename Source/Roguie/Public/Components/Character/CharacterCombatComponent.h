@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/Character/CharacterBaseComponent.h"
 #include "Core/Types/CombatTypes.h"
 #include "Data/DataTables/WeaponAnimationData.h"
 #include "Utility/Logger.h"
@@ -15,7 +15,7 @@
 class UBoxComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterCombatComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterCombatComponent : public UCharacterBaseComponent
 {
 	GENERATED_BODY()
 
@@ -53,9 +53,6 @@ private:
 	UPROPERTY()
 	TObjectPtr<UBoxComponent> StabAttackCollisionBox;
 	void SetupAttackHitBoxes();
-
-	UPROPERTY()
-	TObjectPtr<class ARoguieCharacter> OwningActor;
 	UPROPERTY()
 	TArray<TObjectPtr<UAnimMontage>> AttackComboMontages;
 

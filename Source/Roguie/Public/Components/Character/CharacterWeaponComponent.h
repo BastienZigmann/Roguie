@@ -5,24 +5,24 @@
 #include "CoreMinimal.h"
 #include "Core/Types/CharacterTypes.h"
 #include "Data/DataTables/WeaponAnimationData.h"
-#include "Components/ActorComponent.h"
+#include "Components/Character/CharacterBaseComponent.h"
 #include "Utility/Logger.h"
-#include "WeaponComponent.generated.h"
+#include "CharacterWeaponComponent.generated.h"
 
 class AWeaponBase;
 
-// UWeaponComponent is responsible for managing the currently equipped weapon.
+// UCharacterWeaponComponent is responsible for managing the currently equipped weapon.
 // It handles spawning the weapon actor, attaching it to the mesh, and loading its animation data
 // from the animation database. It also stores animation playback parameters like AttackAnimationRate.
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UWeaponComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterWeaponComponent : public UCharacterBaseComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UWeaponComponent();
+	UCharacterWeaponComponent();
 
 	void EquipWeapon(AWeaponBase* NewWeapon);
 	int32 GetMaxEquippedWeaponCombo() const;
@@ -46,9 +46,6 @@ protected:
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"), Category = "Weapons")
 	float AttackAnimationRate = 1.5f;
-
-	UPROPERTY()
-	TObjectPtr<class ARoguieCharacter> OwningActor;
 
 	UPROPERTY()
 	TObjectPtr<AWeaponBase> EquippedWeapon = nullptr;

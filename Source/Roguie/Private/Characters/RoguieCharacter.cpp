@@ -8,7 +8,7 @@
 #include "Components/Character/CharacterStateComponent.h"
 #include "Components/Character/CharacterCombatComponent.h"
 #include "Components/Character/CharacterInventoryComponent.h"
-#include "Components/WeaponComponent.h"
+#include "Components/Character/CharacterWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Camera/CameraComponent.h"
 #include "EnhancedInputComponent.h"
@@ -33,7 +33,7 @@ ARoguieCharacter::ARoguieCharacter()
     CharacterStateComponent = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("CharacterStateComponent"));
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
     InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
-    WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
+    WeaponComponent = CreateDefaultSubobject<UCharacterWeaponComponent>(TEXT("WeaponComponent"));
     
     // Camera
     CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -409,61 +409,4 @@ void ARoguieCharacter::Tick(float DeltaTime)
     if (dashTimeline.IsPlaying())
         dashTimeline.TickTimeline(DeltaTime);
 
-}
-
-// *********************************************
-// ********* Class Accessors *******************
-// *********************************************
-TObjectPtr<UHealthFlashComponent>& ARoguieCharacter::GetHealthFlashComponent() 
-{
-	if (!HealthFlashComponent)
-	{
-		UE_LOG(LogTemp, Error, TEXT("HealthFlashComponent is null!"));
-		HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
-	}
-    return HealthFlashComponent;
-}
-
-TObjectPtr<UCharacterStateComponent>& ARoguieCharacter::GetCharacterStateComponent() 
-{
-	if (!CharacterStateComponent)
-	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterStateComponent is null!"));
-		CharacterStateComponent = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("CharacterStateComponent"));
-	}
-
-    return CharacterStateComponent;
-}
-
-TObjectPtr<UCharacterCombatComponent>& ARoguieCharacter::GetCombatComponent() 
-{
-    if (!CombatComponent)
-    {
-        UE_LOG(LogTemp, Error, TEXT("CombatComponent is null!"));
-        CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));
-    }
-
-    return CombatComponent;
-}
-
-TObjectPtr<UCharacterInventoryComponent>& ARoguieCharacter::GetInventoryComponent() 
-{
-    if (!InventoryComponent)
-    {
-        UE_LOG(LogTemp, Error, TEXT("InventoryComponent is null!"));
-        InventoryComponent = CreateDefaultSubobject<UCharacterInventoryComponent>(TEXT("InventoryComponent"));
-    }
-
-    return InventoryComponent;
-}
-
-TObjectPtr<UWeaponComponent>& ARoguieCharacter::GetWeaponComponent() 
-{
-    if (!WeaponComponent)
-    {
-        UE_LOG(LogTemp, Error, TEXT("WeaponComponent is null!"));
-        WeaponComponent = CreateDefaultSubobject<UWeaponComponent>(TEXT("WeaponComponent"));
-    }
-
-    return WeaponComponent;
 }

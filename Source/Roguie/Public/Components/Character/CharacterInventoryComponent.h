@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/Character/CharacterBaseComponent.h"
 #include "Utility/Logger.h"
 #include "Core/Types/CharacterTypes.h"
 #include "Core/Types/WeaponTypes.h"
@@ -15,7 +15,7 @@ class AWeaponBase;
 // It manages which weapon is currently active and delegates equipping to the WeaponComponent.
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterInventoryComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterInventoryComponent : public UCharacterBaseComponent
 {
 	GENERATED_BODY()
 
@@ -48,8 +48,4 @@ private:
 
 	int32 GetNextValidWeaponIndex(int32 start = 0) const;
 	bool HasValidWeapon() const;
-
-	UPROPERTY()
-	TObjectPtr<class ARoguieCharacter> OwningActor;
-
 };

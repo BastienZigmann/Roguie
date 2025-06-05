@@ -4,7 +4,7 @@
 #include "Components/Character/CharacterInventoryComponent.h"
 #include "CoreMinimal.h"
 #include "Characters/RoguieCharacter.h"
-#include "Components/WeaponComponent.h"
+#include "Components/Character/CharacterWeaponComponent.h"
 #include "Weapons/WeaponBase.h"
 
 // Sets default values for this component's properties
@@ -23,14 +23,8 @@ UCharacterInventoryComponent::UCharacterInventoryComponent()
 void UCharacterInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	OwningActor = Cast<ARoguieCharacter>(GetOwner());
-	if (!OwningActor)
-	{
-		ErrorLog(TEXT("Owning actor is not a RoguieCharacter!"), this);
-		return;
-	}
 
-	OwningActor->GetDataAsset()->MaxWeaponSlots = MaxWeapons;
+	OwningCharacter->GetDataAsset()->MaxWeaponSlots = MaxWeapons;
 
 }
 
@@ -48,9 +42,9 @@ bool UCharacterInventoryComponent::CycleWeapon()
 
 	CurrentWeaponIndex = nextIndex;
 	// Actually equip the weapon
-	if (OwningActor && OwningActor->GetWeaponComponent())
+	if (OwningCharacter && OwningCharacter->GetWeaponComponent())
 	{
-		OwningActor->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
+		OwningCharacter->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
 	}
 	return true;
 }
@@ -85,15 +79,15 @@ void UCharacterInventoryComponent::AddOrReplaceWeapon(AWeaponBase* NewWeapon)
 		{
 			PossessedWeapons[i] = NewWeapon;
 			DebugLog(FString::Printf(TEXT("Added weapon to slot %d"), i), this);
-			PossessedWeapons[i]->AttachWeaponToHolsterSocket(OwningActor); // instant holster current weapon
+			PossessedWeapons[i]->AttachWeaponToHolsterSocket(OwningCharacter); // instant holster current weapon
 
 			if (CurrentWeaponIndex == INDEX_NONE)
 			{
 				CurrentWeaponIndex = i;
-				if (OwningActor && OwningActor->GetWeaponComponent())
+				if (OwningCharacter && OwningCharacter->GetWeaponComponent())
 				{
 					DebugLog(TEXT("New Weapon detected -> equipping it"), this);
-					OwningActor->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
+					OwningCharacter->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
 				}
 			}
 			return;
@@ -106,10 +100,10 @@ void UCharacterInventoryComponent::AddOrReplaceWeapon(AWeaponBase* NewWeapon)
 		// TODO: test replacing weapon
 		// TODO: oldWP -> Destroy
 		PossessedWeapons[CurrentWeaponIndex] = NewWeapon;
-		PossessedWeapons[CurrentWeaponIndex]->AttachWeaponToHolsterSocket(OwningActor); // instant holster current weapon
-		if (OwningActor && OwningActor->GetWeaponComponent())
+		PossessedWeapons[CurrentWeaponIndex]->AttachWeaponToHolsterSocket(OwningCharacter); // instant holster current weapon
+		if (OwningCharacter && OwningCharacter->GetWeaponComponent())
 		{
-			OwningActor->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
+			OwningCharacter->GetWeaponComponent()->EquipWeapon(PossessedWeapons[CurrentWeaponIndex]);
 		}
 		DebugLog(TEXT("Replaced currently equipped weapon."), this);
 	}
