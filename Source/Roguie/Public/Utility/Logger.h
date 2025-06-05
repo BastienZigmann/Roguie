@@ -16,4 +16,8 @@ public:
 	void ErrorLog(const FString& Msg, const UObject* Context = nullptr) const;
 
 	virtual void DebugTraces();
+
+private:
+	FString GeneratePrefix(const UObject* Context) const;
+
 };

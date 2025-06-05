@@ -1,15 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Components/Enemies/EnemyHealthComponent.h"
-#include "Components/Enemies/EnemyMovementComponent.h"
-#include "Components/Enemies/EnemyBehaviorComponent.h"
-#include "Components/Enemies/EnemyAnimManagerComponent.h"
-#include "Enemies/EnemyBase.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Components/HealthComponent.h"
 
 // Sets default values for this component's properties
-UEnemyHealthComponent::UEnemyHealthComponent()
+UHealthComponent::UHealthComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -20,28 +15,31 @@ UEnemyHealthComponent::UEnemyHealthComponent()
 
 
 // Called when the game starts
-void UEnemyHealthComponent::BeginPlay()
+void UHealthComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
 
-	// ...
-
-	if (OwningActor && OwningActor->GetDataAsset())
+void UHealthComponent::Initialize(float InitialMaxHealth)
+{
+	if (InitialMaxHealth <= 0.f)
 	{
-		DebugLog("Initializing with owner dataset", this);
-		MaxHealth = OwningActor->GetDataAsset()->MaxHealth;
+		DebugLog("Invalid initial max health, setting to default 100", this);
+		InitialMaxHealth = 100.f;
 	}
 
+	MaxHealth = InitialMaxHealth;
 	CurrentHealth = MaxHealth;
-	
+
+	DebugLog(FString::Printf(TEXT("Health initialized: %f"), CurrentHealth), this);
 }
 
-bool UEnemyHealthComponent::IsDeadOrInvalid() const
+bool UHealthComponent::IsDeadOrInvalid() const
 {
-	return !OwningActor || !OwningActor->GetBehaviorComponent() || OwningActor->GetBehaviorComponent()->IsDead();
+	return !GetOwner() || CurrentHealth <= 0.f;
 }
 
-void UEnemyHealthComponent::ApplyDamage(float DamageAmount)
+void UHealthComponent::ApplyDamage(float DamageAmount)
 {
 	if (IsDeadOrInvalid()) return;
 	if (DamageAmount <= 0.f) return;
@@ -56,15 +54,12 @@ void UEnemyHealthComponent::ApplyDamage(float DamageAmount)
 	}
 	else
 	{
-		if (OwningActor->GetEnemyMovementComponent() && OwningActor->GetAnimManagerComponent())
-		{
-			OnGetHit.Broadcast();
-		}
+		OnGetHit.Broadcast();
 		OnDamaged.Broadcast();
 	}
 }
 
-void UEnemyHealthComponent::Heal(float HealAmount)
+void UHealthComponent::Heal(float HealAmount)
 {
 	if (IsDeadOrInvalid()) return;
 	if (HealAmount <= 0.f) return;
@@ -78,7 +73,7 @@ void UEnemyHealthComponent::Heal(float HealAmount)
 	OnHealed.Broadcast();
 }
 
-void UEnemyHealthComponent::Die()
+void UHealthComponent::Die()
 {
 	if (IsDeadOrInvalid()) return;
 

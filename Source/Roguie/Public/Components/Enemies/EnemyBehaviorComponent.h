@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyComponentBase.h"
+#include "EnemyBaseComponent.h"
 #include "Utility/Logger.h"
 #include "Core/Types/EnemyTypes.h"
 #include "EnemyBehaviorComponent.generated.h"
@@ -11,7 +11,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStateChange, EEnemyState, State);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyBehaviorComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyBehaviorComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 

@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "EnemyComponentBase.h"
+#include "EnemyBaseComponent.h"
 #include "PlayerDetector.generated.h"
 
 class ARoguieCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UPlayerDetector : public UEnemyComponentBase
+class ROGUIE_API UPlayerDetector : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 

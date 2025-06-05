@@ -3,19 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "Utility/Logger.h"
-#include "EnemyComponentBase.generated.h"
+#include "Components/RoguieBaseComponent.h"
+#include "EnemyBaseComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyComponentBase : public UActorComponent, public FLogger
+class ROGUIE_API UEnemyBaseComponent : public URoguieBaseComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UEnemyComponentBase();
+	UEnemyBaseComponent();
 
 protected:
 	// Called when the game starts

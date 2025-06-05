@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "Utility/Logger.h"
+#include "Components/RoguieBaseComponent.h"
 #include "Characters/RoguieCharacter.h"
 #include "CharacterBaseComponent.generated.h"
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterBaseComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterBaseComponent : public URoguieBaseComponent
 {
 	GENERATED_BODY()
 

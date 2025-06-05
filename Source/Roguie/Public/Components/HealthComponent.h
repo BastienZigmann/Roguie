@@ -3,10 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/Enemies/EnemyComponentBase.h"
+#include "Components/RoguieBaseComponent.h"
 #include "Delegates/DelegateCombinations.h"
-#include "EnemyHealthComponent.generated.h"
-
+#include "HealthComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDeathSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDamagedSignature);
@@ -14,13 +13,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnHealedSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGetHit);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyHealthComponent : public UEnemyComponentBase
+class ROGUIE_API UHealthComponent : public URoguieBaseComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UEnemyHealthComponent();
+	UHealthComponent();
+	void Initialize(float InitialMaxHealth);
 
 	void ApplyDamage(float Amount);
 	void Heal(float Amount);

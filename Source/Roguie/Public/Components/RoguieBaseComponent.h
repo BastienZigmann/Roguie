@@ -3,22 +3,35 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/Character/CharacterBaseComponent.h"
-#include "CharacterHealthComponent.generated.h"
+#include "Components/ActorComponent.h"
+#include "Utility/Logger.h"
+#include "RoguieBaseComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterHealthComponent : public UCharacterBaseComponent
+class ROGUIE_API URoguieBaseComponent : public UActorComponent, public FLogger
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UCharacterHealthComponent();
+	URoguieBaseComponent();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+	template<typename T>
+	T* GetOwnerComponent() const
+	{
+		return GetOwner() ? GetOwner()->FindComponentByClass<T>() : nullptr;
+	}
+
+	template<typename T>
+	T* GetOwnerTyped() const
+	{
+		return Cast<T>(GetOwner());
+	}
 
 public:	
 	// Called every frame

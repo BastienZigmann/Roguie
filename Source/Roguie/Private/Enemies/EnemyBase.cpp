@@ -10,7 +10,7 @@
 #include "Components/HealthFlashComponent.h"
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
-#include "Components/Enemies/EnemyHealthComponent.h"
+#include "Components/HealthComponent.h"
 #include "Components/Enemies/StatusEffectComponent.h"
 #include "Components/Enemies/EnemyAIController.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
@@ -29,7 +29,7 @@ AEnemyBase::AEnemyBase()
 	EnemyMovementComponent = CreateDefaultSubobject<UEnemyMovementComponent>(TEXT("EnemyMovementComponent"));
 	AnimManagerComponent = CreateDefaultSubobject<UEnemyAnimManagerComponent>(TEXT("AnimManagerComponent"));
 	BehaviorComponent = CreateDefaultSubobject<UEnemyBehaviorComponent>(TEXT("BehaviorComponent"));
-	HealthComponent = CreateDefaultSubobject<UEnemyHealthComponent>(TEXT("HealthComponent"));
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	StatusEffectComponent = CreateDefaultSubobject<UStatusEffectComponent>(TEXT("StatusEffectComponent"));
 	CombatComponent = CreateDefaultSubobject<UEnemyCombatComponent>(TEXT("CombatComponent"));
 

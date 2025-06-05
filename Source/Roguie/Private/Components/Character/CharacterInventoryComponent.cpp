@@ -26,7 +26,7 @@ void UCharacterInventoryComponent::BeginPlay()
 
 	OwningCharacter->GetDataAsset()->MaxWeaponSlots = MaxWeapons;
 
-}
+}	
 
 bool UCharacterInventoryComponent::CycleWeapon()
 {

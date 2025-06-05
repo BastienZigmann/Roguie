@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyComponentBase.h"
+#include "EnemyBaseComponent.h"
 #include "Delegates/DelegateCombinations.h"
 #include "EnemyAnimManagerComponent.generated.h"
 
@@ -12,7 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGetHitMontageEndSignature);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackMontageEndSignature);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyAnimManagerComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyAnimManagerComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 

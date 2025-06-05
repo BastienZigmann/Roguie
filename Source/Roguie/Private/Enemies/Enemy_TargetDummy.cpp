@@ -7,7 +7,7 @@
 #include "Components/Enemies/EnemyMovementComponent.h"
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
-#include "Components/Enemies/EnemyHealthComponent.h"
+#include "Components/HealthComponent.h"
 
 AEnemy_TargetDummy::AEnemy_TargetDummy()
 {

@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/Enemies/EnemyComponentBase.h"
+#include "Components/Enemies/EnemyBaseComponent.h"
 #include "Core/Types/EnemyTypes.h"
 #include "EnemyCombatComponent.generated.h"
 
 UCLASS( ClassGroup = (Custom), meta = (BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyCombatComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyCombatComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 

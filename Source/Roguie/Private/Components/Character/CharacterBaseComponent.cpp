@@ -19,7 +19,7 @@ void UCharacterBaseComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	GetOwningCharacter();
+	OwningCharacter = GetOwnerTyped<ARoguieCharacter>();
 	if (!OwningCharacter)
 	{
 		ErrorLog(TEXT("Owning character is null!"), this);
@@ -30,14 +30,6 @@ void UCharacterBaseComponent::BeginPlay()
 
 ARoguieCharacter* UCharacterBaseComponent::GetOwningCharacter()
 {
-	if (!OwningCharacter)
-	{
-		OwningCharacter = Cast<ARoguieCharacter>(GetOwner());
-		if (!OwningCharacter)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("UCharacterBaseComponent::GetOwningCharacter: Owning character is null!"));
-		}
-	}
 	return OwningCharacter;
 }
 
