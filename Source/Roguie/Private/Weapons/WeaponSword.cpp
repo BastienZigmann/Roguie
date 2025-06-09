@@ -2,7 +2,7 @@
 
 
 #include "Weapons/WeaponSword.h"
-
+#include "Core/Types/WeaponTypes.h"
 
 
 

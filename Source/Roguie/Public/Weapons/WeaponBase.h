@@ -3,17 +3,18 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Weapons/WeaponStatsBlock.h"
+#include "Core/Types/WeaponTypes.h"
 #include "GameFramework/Actor.h"
-#include "Core/Types/RoguieTypes.h"
-#include "Data/WeaponAnimationData.h"
-#include "Utility/Logger.h"
+#include "Core/Types/CharacterTypes.h"
+#include "Core/Types/WeaponTypes.h"
+#include "Data/DataTables/WeaponAnimationData.h"
+#include "Utils/Logger.h"
 #include "WeaponBase.generated.h"
 
 #define DEFAULT_HOLSTER_SOCKET_NAME TEXT("sword_socket")
 #define DEFAULT_WEAPON_SOCKET_NAME TEXT("hand_r_socket")
 
-class AMyRoguieCharacter;
+class ARoguieCharacter;
 
 UCLASS()
 class ROGUIE_API AWeaponBase : public AActor, public FLogger
@@ -32,16 +33,19 @@ public:
 
 	FWeaponStatBlock RuntimeStats;
 	int GetMaxComboCount() const { return RuntimeStats.MaxComboCount; }
+	float GetWeaponDamage() const { return RuntimeStats.BaseDamage; }
 	EWeaponType GetWeaponType() const { return WeaponType; }
 
 	static const FName GetDefaultHolsterSocketName() { return DEFAULT_HOLSTER_SOCKET_NAME; };
 	static const FName GetDefaultWeaponSocketName() { return DEFAULT_WEAPON_SOCKET_NAME; };
-	void AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character);
-	void AttachWeaponToHandSocket(AMyRoguieCharacter* Character);
+	void AttachWeaponToHolsterSocket(ARoguieCharacter* Character);
+	void AttachWeaponToHandSocket(ARoguieCharacter* Character);
 	FName GetHolsterSocketName() const;
 	FName GetWeaponSocketName() const;
 	UAnimMontage* GetComboMontage(int32 index) const;
 	UAnimMontage* GetDrawMontage() const;
+	float GetDrawMontagePlayRate() const;
+
 
 protected:
 

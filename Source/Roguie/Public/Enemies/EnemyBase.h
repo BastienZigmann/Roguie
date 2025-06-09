@@ -5,15 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Components/WidgetComponent.h"
-#include "Utility/Logger.h"
+#include "Utils/Logger.h"
 #include "EnemyBase.generated.h"
 
 class UPlayerDetector;
 class UEnemyMovementComponent;
 class UCharacterMovementComponent;
-class UAnimManagerComponent;
+class UEnemyAnimManagerComponent;
 class UEnemyBehaviorComponent;
-class UEnemyHealthComponent;
+class UHealthComponent;
 class UStatusEffectComponent;
 class UEnemyCombatComponent;
 class UEnemyDataAsset;
@@ -33,9 +33,9 @@ public:
 	// --- Components getters
 	UPlayerDetector* GetPlayerDetectorComponent() const { return PlayerDetectorComponent; }
 	UEnemyMovementComponent* GetEnemyMovementComponent() const { return EnemyMovementComponent; }
-	UAnimManagerComponent* GetAnimManagerComponent() const { return AnimManagerComponent; }
+	UEnemyAnimManagerComponent* GetAnimManagerComponent() const { return AnimManagerComponent; }
 	UEnemyBehaviorComponent* GetBehaviorComponent() const { return BehaviorComponent; }
-	UEnemyHealthComponent* GetHealthComponent() const { return HealthComponent; }
+	UHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	UStatusEffectComponent* GetStatusEffectComponent() const { return StatusEffectComponent; }
 	UEnemyCombatComponent* GetCombatComponent() const { return CombatComponent; }
 
@@ -62,11 +62,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyMovementComponent> EnemyMovementComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UAnimManagerComponent> AnimManagerComponent;
+	TObjectPtr<UEnemyAnimManagerComponent> AnimManagerComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyBehaviorComponent> BehaviorComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UEnemyHealthComponent> HealthComponent;
+	TObjectPtr<UHealthComponent> HealthComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStatusEffectComponent> StatusEffectComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))

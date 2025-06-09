@@ -3,25 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "Utility/Logger.h"
+#include "Components/Character/CharacterBaseComponent.h"
+#include "Utils/Logger.h"
+#include "Core/Types/CharacterTypes.h"
 #include "CharacterStateComponent.generated.h"
 
 // UCharacterStateComponent tracks the current state of the character (Idle, Attacking, Dashing, etc).
 // It defines and manages valid state transitions and provides query functions for gameplay logic.
 
-UENUM(BlueprintType)
-enum class ECharacterState : uint8
-{
-	Idle        UMETA(DisplayName = "Idle"),
-	Moving      UMETA(DisplayName = "Moving"),
-	Attacking   UMETA(DisplayName = "Attacking"),
-	Dashing     UMETA(DisplayName = "Dashing"),
-	Dead        UMETA(DisplayName = "Dead")
-};
-
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterStateComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterStateComponent : public UCharacterBaseComponent
 {
 	GENERATED_BODY()
 
@@ -53,8 +44,6 @@ protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction);
 
 private:
-	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
 	
 	ECharacterState CurrentState = ECharacterState::Idle;
 
@@ -74,6 +63,5 @@ private:
 		default: return TEXT("Unknown");
 		}
 	}
-
 
 };

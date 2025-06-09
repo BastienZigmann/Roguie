@@ -3,7 +3,7 @@
 #include "Components/Enemies/StatusEffectComponent.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/Enemies/EnemyMovementComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 
 // Sets default values for this component's properties
 UStatusEffectComponent::UStatusEffectComponent()

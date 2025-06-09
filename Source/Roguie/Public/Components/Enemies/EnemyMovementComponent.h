@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EnemyComponentBase.h"
+#include "EnemyBaseComponent.h"
 #include "Core/Types/EnemyTypes.h"
 #include "EnemyMovementComponent.generated.h"
 
@@ -26,7 +26,7 @@ enum class EMoveResult : uint8
 };
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyMovementComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyMovementComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 

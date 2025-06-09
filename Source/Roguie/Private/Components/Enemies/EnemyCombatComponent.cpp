@@ -2,16 +2,18 @@
 
 
 #include "Components/Enemies/EnemyCombatComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include <Kismet/GameplayStatics.h>
+#include "Lib/CombatUtils.h"
+#include "Characters/RoguieCharacter.h"
 
 UEnemyCombatComponent::UEnemyCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	//EnableDebug();
+	// EnableDebug();
 }
 
 void UEnemyCombatComponent::BeginPlay()
@@ -175,62 +177,15 @@ void UEnemyCombatComponent::HandleMeleeHitNotify()
 	DebugLog(FString::Printf(TEXT("Handling melee hit notify for %s"), *GetAttackPatternName()), this);
 
 	const FAttackPattern& Pattern = AttackPatterns[CurrentAttackIndex];
-	PerformMeleeSweep(Pattern);
+	TArray<AActor*> HitActors = FCombatUtils::SphereMeleeHitDetection(OwningActor, Pattern.AttackMeleeHitBoxRange, ARoguieCharacter::StaticClass(), IsDebugTracesOn());
 
-}
+	DebugLog(FString::Printf(TEXT("Hit %d actors with %s"), HitActors.Num(), *GetAttackPatternName()), this);
 
-void UEnemyCombatComponent::PerformMeleeSweep(const FAttackPattern& Pattern)
-{
-	if (!OwningActor) return;
-
-	DebugLog(FString::Printf(TEXT("Performing melee sweep for %s."), *GetAttackPatternName()), this);
-
-	FVector Start = OwningActor->GetActorLocation();
-	FVector Forward = OwningActor->GetActorForwardVector();
-	FVector End = Start + Forward * Pattern.AttackMeleeHitBoxRange;
-
-	TArray<FHitResult> OutHits;
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(OwningActor);
-
-	bool bHit = GetWorld()->SweepMultiByChannel(
-		OutHits,
-		Start,
-		End,
-		FQuat::Identity,
-		ECC_Pawn,
-		FCollisionShape::MakeSphere(Pattern.AttackMeleeHitBoxRange), // default hit radius; can be exposed in pattern if needed
-		Params
-	);
-
-
-
-	if (IsDebugOn())
+	for (AActor* HitActor : HitActors)
 	{
-		const float Duration = 2.0f;
-		const float Thickness = 1.5f;
-		const float Radius = Pattern.AttackMeleeHitBoxRange;
-
-		// Draw start sphere (green)
-		DrawDebugSphere(GetWorld(), Start, Radius, 16, FColor::Green, false, Duration, 0, Thickness);
-
-		// Draw end sphere (red)
-		DrawDebugSphere(GetWorld(), End, Radius, 16, FColor::Red, false, Duration, 0, Thickness);
-
-		// Draw connecting line (yellow)
-		DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, Duration, 0, Thickness);
-	}
-
-	if (bHit)
-	{
-		for (const FHitResult& Hit : OutHits)
+		if (HitActor)
 		{
-			AActor* HitActor = Hit.GetActor();
-			if (HitActor && HitActor != OwningActor)
-			{
-				DebugLog("Hit detected on actor: " + HitActor->GetName(), this);
-				HitOnPlayer(HitActor, Pattern);
-			}
+			HitOnPlayer(HitActor, Pattern);
 		}
 	}
 }

@@ -2,13 +2,15 @@
 
 #include "Components/Character/CharacterCombatComponent.h"
 #include "CoreMinimal.h"
-#include "Data/WeaponAnimationData.h"
+#include "Data/DataTables/WeaponAnimationData.h"
 #include "Components/Character/CharacterStateComponent.h"
-#include "Components/WeaponComponent.h"
+#include "Components/Character/CharacterAnimManagerComponent.h"
+#include "Components/Character/CharacterInventoryComponent.h"
 #include "Weapons/WeaponBase.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/BoxComponent.h"
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
+#include "Lib/CombatUtils.h"
 #include <Kismet/GameplayStatics.h>
 
 // Sets default values for this component's properties
@@ -19,7 +21,8 @@ UCharacterCombatComponent::UCharacterCombatComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	CurrentAttackCombo = 0;
-	//EnableDebug();
+	// EnableDebug();
+	// EnableDebugTraces();
 }
 
 // Called when the game starts
@@ -27,20 +30,21 @@ void UCharacterCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = Cast<AMyRoguieCharacter>(GetOwner());
-
-	SetupAttackHitBoxes();
+	if (OwningCharacter->GetAnimManagerComponent())
+	{
+		OwningCharacter->GetAnimManagerComponent()->OnAttackMontageEnd.AddDynamic(this, &UCharacterCombatComponent::EndAttackMove);
+	}
 	
 }
 
 void UCharacterCombatComponent::StartAttack()
 {
-	if (OwningActor->GetCharacterStateComponent()->IsDead()) return;
-	if (!OwningActor->GetCharacterStateComponent()->CanAttack()) return;
-	if (OwningActor->GetCharacterStateComponent()->IsAttacking())
+	if (OwningCharacter->GetCharacterStateComponent()->IsDead()) return;
+	if (!OwningCharacter->GetCharacterStateComponent()->CanAttack()) return;
+	if (OwningCharacter->GetCharacterStateComponent()->IsAttacking())
 	{
 		DebugLog(TEXT("Already attacking"), this);
-		if (AttackBuffer.bCanBuffer)
+		if (AttackBuffer.bCanBuffer && !AttackBuffer.bInputReceived)
 		{
 			DebugLog(TEXT("Attack buffered"), this);
 			AttackBuffer.bInputReceived = true;
@@ -48,27 +52,48 @@ void UCharacterCombatComponent::StartAttack()
 		return;
 	}
 
-	GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer);
+	GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer); // New attack
 
-	OwningActor->GetCharacterStateComponent()->EnterAttackingState();
-	UAnimMontage* NextComboMontage = GetNextComboMontage();
-	if (NextComboMontage)
+	OwningCharacter->GetCharacterStateComponent()->EnterAttackingState();
+	// Play the montage
+	float LengthOfMontage = 0.0f;
+	if (OwningCharacter->GetAnimManagerComponent())
 	{
-		OwningActor->PlayAnimMontage(NextComboMontage, OwningActor->GetWeaponComponent()->GetAttackAnimationRate());
-		CurrentAttackCombo = (CurrentAttackCombo + 1) % OwningActor->GetWeaponComponent()->GetMaxEquippedWeaponCombo();
+		LengthOfMontage = OwningCharacter->GetAnimManagerComponent()->PlayAttackMontage(CurrentAttackCombo);
+	}
+	CurrentAttackCombo = (CurrentAttackCombo + 1) % OwningCharacter->GetInventoryComponent()->GetEquippedWeapon()->GetMaxComboCount();
+	
+	float TimeBeforeBufferOpen = FMath::Max(LengthOfMontage - BufferOpeningTimeBeforeEndOfMove, 0.0f);
+	if (TimeBeforeBufferOpen == 0)
+	{
+		OpenNextAttackBuffer();
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().ClearTimer(OpenBufferTimer);
+		GetWorld()->GetTimerManager().SetTimer(
+			OpenBufferTimer,
+			this,
+			&UCharacterCombatComponent::OpenNextAttackBuffer,
+			TimeBeforeBufferOpen, // Delay in seconds
+			false // Looping
+		);
 	}
 }
 
-void UCharacterCombatComponent::EndAttackMove() // Called from ABP
+void UCharacterCombatComponent::EndAttackMove(bool bInterrupted) 
 {
-	OwningActor->GetCharacterStateComponent()->EnterIdleState();
+	OwningCharacter->GetCharacterStateComponent()->EnterIdleState();
+	DebugLog("Attack Move Ended", this);
 
 	if (AttackBuffer.bInputReceived)
 	{
+		DebugLog("Attack buffered, starting next attack", this);
 		StartAttack();
 	}
 	else
 	{
+		DebugLog("No attack buffered, resetting combo state after delay", this);
 		// Clear previous timer if still running (just in case
 		GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer);
 
@@ -86,102 +111,53 @@ void UCharacterCombatComponent::EndAttackMove() // Called from ABP
 
 void UCharacterCombatComponent::OpenNextAttackBuffer() // Called from ABP
 {
+	DebugLog("Opening next attack buffer", this);
 	AttackBuffer.bCanBuffer = true;
 }
 
+
 void UCharacterCombatComponent::ResetComboState()
 {
+	DebugLog("Resetting combo state", this);
 	GetWorld()->GetTimerManager().ClearTimer(WeaponComboResetTimer);
-	OwningActor->GetCharacterStateComponent()->EnterIdleState();
+	OwningCharacter->GetCharacterStateComponent()->EnterIdleState();
 	CurrentAttackCombo = 0;
-}
-
-void UCharacterCombatComponent::TriggerSlashHit()
-{
-	if (!OwningActor->GetCharacterStateComponent()->IsAttacking()) return;
-	if (!SlashAttackCollisionBox) return;
-
-	SlashAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-
-	TArray<AActor*> Hits;
-	SlashAttackCollisionBox->GetOverlappingActors(Hits, AEnemyBase::StaticClass());
-
-	for (AActor* Actor : Hits)
-	{
-		UGameplayStatics::ApplyDamage(Actor, 25.f, nullptr, GetOwner(), nullptr);
-		DebugLog(FString::Printf(TEXT("Slash the enemy %s !"), *Actor->GetName()), this);
-	}
-
-	SlashAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void UCharacterCombatComponent::TriggerStabHit()
-{
-	if (!OwningActor->GetCharacterStateComponent()->IsAttacking()) return;
-	if (!StabAttackCollisionBox) return;
-
-	StabAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-
-	TArray<AActor*> Hits;
-	StabAttackCollisionBox->GetOverlappingActors(Hits, AEnemyBase::StaticClass());
-
-	for (AActor* Actor : Hits)
-	{
-		UGameplayStatics::ApplyDamage(Actor, 25.f, nullptr, GetOwner(), nullptr);
-		DebugLog(FString::Printf(TEXT("Stab the enemy %s !"), *Actor->GetName()), this);
-	}
-
-	StabAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-}
-
-void UCharacterCombatComponent::ApplyWeaponAnimationSet(const FWeaponAnimationSet& AnimSet, int32 DefaultComboLength)
-{
-	AttackComboMontages = AnimSet.ComboMontages;
 }
 
 UAnimMontage* UCharacterCombatComponent::GetNextComboMontage() const
 {
-	if (OwningActor && OwningActor->GetWeaponComponent() && OwningActor->GetWeaponComponent()->GetEquippedWeapon())
-		return OwningActor->GetWeaponComponent()->GetEquippedWeapon()->GetComboMontage(CurrentAttackCombo);
+	if (OwningCharacter && OwningCharacter->GetInventoryComponent() && OwningCharacter->GetInventoryComponent()->GetEquippedWeapon())
+		return OwningCharacter->GetInventoryComponent()->GetEquippedWeapon()->GetComboMontage(CurrentAttackCombo);
 	return nullptr;
 }
 
-void UCharacterCombatComponent::SetupAttackHitBoxes()
+void UCharacterCombatComponent::TriggerHit()
 {
-	if (OwningActor)
-	{
-		TArray<UBoxComponent*> BoxComponents;
-		OwningActor->GetComponents(BoxComponents);
+	DebugLog("Triggering melee hit", this);
+	// TODO, add combo struct to define type of attack (range rojectile, melee, etc.)
+	if (!OwningCharacter->GetCharacterStateComponent()->IsAttacking()) return;
 
-		for (UBoxComponent* Comp : BoxComponents)
+	TArray<AActor*> HitActors = FCombatUtils::BoxMeleeHitDetection(
+		OwningCharacter,
+		225.0f, // Hit length
+		175.0f, // Hit width
+		AEnemyBase::StaticClass(), // Filter to only hit enemies
+		IsDebugTracesOn()
+	);
+
+	for (AActor* HitActor : HitActors)
+	{
+		if (AEnemyBase* HitEnemy = Cast<AEnemyBase>(HitActor))
 		{
-			if (Comp->GetName().Contains("Slash"))
-				SlashAttackCollisionBox = Comp;
-			else if (Comp->GetName().Contains("Stab"))
-				StabAttackCollisionBox = Comp;
+			DebugLog("Hit Enemy: " + HitActor->GetName(), this);
+			UGameplayStatics::ApplyDamage(HitEnemy, ComputeDamage(HitEnemy), OwningCharacter->GetController(),
+										OwningCharacter, nullptr);
 		}
 	}
-	if (!SlashAttackCollisionBox || !StabAttackCollisionBox)
-	{
-		DebugLog(FString::Printf(TEXT("Failed to create Attack collision box")));
-		return;
-	}
-	// classic slash
-	SlashAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SlashAttackCollisionBox->SetCollisionObjectType(ECC_WorldDynamic);
-	SlashAttackCollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
-	SlashAttackCollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
-	// Stab
-	StabAttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	StabAttackCollisionBox->SetCollisionObjectType(ECC_WorldDynamic);
-	StabAttackCollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
-	StabAttackCollisionBox->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+
 }
 
-void UCharacterCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+float UCharacterCombatComponent::ComputeDamage(AEnemyBase* HitEnemy)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-
+	return OwningCharacter->GetInventoryComponent()->GetEquippedWeapon()->GetWeaponDamage();
 }
-

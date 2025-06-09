@@ -3,12 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/Enemies/EnemyComponentBase.h"
+#include "Components/Enemies/EnemyBaseComponent.h"
 #include "Core/Types/EnemyTypes.h"
 #include "EnemyCombatComponent.generated.h"
 
 UCLASS( ClassGroup = (Custom), meta = (BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyCombatComponent : public UEnemyComponentBase
+class ROGUIE_API UEnemyCombatComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 
@@ -24,7 +24,6 @@ public:
 	void EndAttackMove();
 
 	void HandleMeleeHitNotify();
-	void PerformMeleeSweep(const FAttackPattern& Pattern);
 
 protected:
 	// Called when the game starts
@@ -39,7 +38,7 @@ private:
 	TMap<int32, float> AttackTypeLastUseMap;
 	int32 CurrentAttackIndex = INDEX_NONE;
 	UPROPERTY(EditAnywhere, Category = "Combat|Cooldowns", meta = (AllowPrivateAccess = "true"))
-	float GlobalCooldownDuration = 2.0f; // TODO use data asset cooldown duration
+	float GlobalCooldownDuration; // TODO use data asset cooldown duration
 	float GlobalCooldownLastAttack = 0.0f;
 	void StartAttackCooldown(int32 Index);
 	void StartGlobalCooldown();

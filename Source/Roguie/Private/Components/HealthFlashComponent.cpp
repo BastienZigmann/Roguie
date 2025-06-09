@@ -8,7 +8,7 @@ UHealthFlashComponent::UHealthFlashComponent()
 {
     PrimaryComponentTick.bCanEverTick = false; // No need to tick
 
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> DamageFlashMaterialFinder(TEXT("Material'/Game/Data/CustomMaterial/M_DamageFlash.M_DamageFlash'"));
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> DamageFlashMaterialFinder(TEXT("Material'/Game/Data/CustomMaterials/M_DamageFlash.M_DamageFlash'"));
     if (DamageFlashMaterialFinder.Succeeded())
     {
         DamageFlashMaterial = DamageFlashMaterialFinder.Object;
@@ -18,7 +18,7 @@ UHealthFlashComponent::UHealthFlashComponent()
         UE_LOG(LogTemp, Error, TEXT("Damage material not found"));
     }
 
-    static ConstructorHelpers::FObjectFinder<UMaterialInterface> HealFlashMaterialFinder(TEXT("Material'/Game/Data/CustomMaterial/M_HealFlash.M_HealFlash'"));
+    static ConstructorHelpers::FObjectFinder<UMaterialInterface> HealFlashMaterialFinder(TEXT("Material'/Game/Data/CustomMaterials/M_HealFlash.M_HealFlash'"));
     if (HealFlashMaterialFinder.Succeeded())
     {
         HealFlashMaterial = HealFlashMaterialFinder.Object;

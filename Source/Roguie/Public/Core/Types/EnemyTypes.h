@@ -90,7 +90,7 @@ struct FAttackPattern
 
 	// --- Melee specific
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Melee")
-	float AttackMeleeHitBoxRange = 50.f; // If Apply
+	float AttackMeleeHitBoxRange = 100.f;
 
 	//--- General
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")

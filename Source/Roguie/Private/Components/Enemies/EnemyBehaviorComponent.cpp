@@ -3,13 +3,12 @@
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include "Components/Enemies/EnemyMovementComponent.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
-#include "Components/Enemies/EnemyHealthComponent.h"
-#include "Core/Types/EnemyTypes.h"
+#include "Components/HealthComponent.h"
 #include "Enemies/EnemyBase.h"
-#include "Utility/Logger.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Utils/Logger.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UEnemyBehaviorComponent::UEnemyBehaviorComponent()

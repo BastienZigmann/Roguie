@@ -2,11 +2,13 @@
 
 
 #include "Weapons/WeaponBase.h"
-#include "Weapons/WeaponDataAsset.h"
-#include <Utility/WeaponAnimationLibrary.h>
-#include <Characters/MyRoguieCharacter.h>
+#include "Data/DataAssets/Weapons/WeaponDataAsset.h"
+#include "Animation/AnimNotifies/AnimNotify_PlayerHit.h"
+#include "Animation/AnimNotifies/AnimNotify_PlayerWeaponSwitch.h"
+#include "Components/Character/CharacterAnimManagerComponent.h"
+#include "Lib/WeaponAnimationLibrary.h"
+#include "Characters/RoguieCharacter.h"
 #include <Kismet/GameplayStatics.h>
-//#include "Weapons/WeaponStatsBlock.h"
 
 // Sets default values
 AWeaponBase::AWeaponBase()
@@ -23,7 +25,7 @@ AWeaponBase::AWeaponBase()
 	WeaponMesh->SetGenerateOverlapEvents(false);
 	WeaponMesh->SetCanEverAffectNavigation(false);
 	WeaponMesh->SetVisibility(true);
-
+	// EnableDebug();
 }
 
 void AWeaponBase::BeginPlay()
@@ -38,7 +40,7 @@ void AWeaponBase::BeginPlay()
 	}
 }
 
-void AWeaponBase::AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character)
+void AWeaponBase::AttachWeaponToHolsterSocket(ARoguieCharacter* Character)
 {
 	if (!Character || !Character->GetMesh()) return;
 	DebugLog(FString::Printf(TEXT("Attaching %s to holster socket name %s"), *UEnum::GetValueAsString(GetWeaponType()), *AnimationSet.HolsterSocketName.ToString()), this);
@@ -47,7 +49,7 @@ void AWeaponBase::AttachWeaponToHolsterSocket(AMyRoguieCharacter* Character)
 	AttachToComponent(Character->GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, GetHolsterSocketName());
 }
 
-void AWeaponBase::AttachWeaponToHandSocket(AMyRoguieCharacter* Character)
+void AWeaponBase::AttachWeaponToHandSocket(ARoguieCharacter* Character)
 {
 	if (!Character || !Character->GetMesh()) return;
 	DebugLog(FString::Printf(TEXT("Attaching %s to hand socket name %s"), *UEnum::GetValueAsString(GetWeaponType()), *AnimationSet.HolsterSocketName.ToString()), this);
@@ -59,12 +61,55 @@ void AWeaponBase::AttachWeaponToHandSocket(AMyRoguieCharacter* Character)
 
 void AWeaponBase::InitializeAnimationSet()
 {
-	AMyRoguieCharacter* Character = Cast<AMyRoguieCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+	DebugLog("Initializing animation set for weapon type", this);
+	ARoguieCharacter* Character = Cast<ARoguieCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	const FWeaponAnimationSet* AnimSet = UWeaponAnimationLibrary::GetAnimationSet(
 		Character->GetCharacterType(), GetWeaponType());
 	if (AnimSet)
 	{
 		AnimationSet = *AnimSet;
+
+		for (int32 i = 0; i < AnimationSet.ComboMontages.Num(); ++i)
+		{
+			if (AnimationSet.ComboMontages.IsValidIndex(i))
+			{
+				AnimationSet.ComboMontages[i]->BlendOutTriggerTime = 0.0;
+			}
+			else
+			{
+				DebugLog(FString::Printf(TEXT("Combo %d: No montage found"), i), this);
+			}
+		}
+
+		#if WITH_EDITOR || UE_BUILD_DEBUG
+		
+		if (Character->GetAnimManagerComponent())
+		{
+			{
+				TArray<UClass*> RequiredNotifyClasses = {
+					UAnimNotify_PlayerHit::StaticClass() 
+					// This will detect any UAnimNotify_PlayerHit notify in the montage
+				};
+				for (int32 i = 0; i < AnimationSet.ComboMontages.Num(); ++i)
+				{
+					Character->GetAnimManagerComponent()->ValidateMontageNotifies(
+						AnimationSet.ComboMontages[i],
+						RequiredNotifyClasses
+					);
+				}
+			}
+
+			TArray<UClass*> RequiredNotifyClasses = {
+					UAnimNotify_PlayerWeaponSwitch::StaticClass() 
+					// This will detect any UAnimNotify_PlayerWeaponSwitch notify in the montage
+				};
+			Character->GetAnimManagerComponent()->ValidateMontageNotifies(
+				AnimationSet.DrawMontage,
+				RequiredNotifyClasses
+			);
+		}
+		#endif
+
 	}
 	else
 	{
@@ -101,4 +146,13 @@ UAnimMontage* AWeaponBase:: GetDrawMontage() const
 		return AnimationSet.DrawMontage;
 	}
 	return nullptr;
+}
+
+float AWeaponBase::GetDrawMontagePlayRate() const
+{
+	if (AnimationSet.DrawMontagePlayRate > 0.0f)
+	{
+		return AnimationSet.DrawMontagePlayRate;
+	}
+	return 1.0f; // Default play rate if not set
 }

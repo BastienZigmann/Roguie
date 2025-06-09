@@ -2,17 +2,17 @@
 
 
 #include "Components/Enemies/EnemyMovementComponent.h"
-#include "Components/Enemies/AnimManagerComponent.h"
+#include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include <AIController.h>
 #include "Navigation/PathFollowingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include <NavigationSystem.h>
 #include <Kismet/KismetSystemLibrary.h>
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 
 // Sets default values for this component's properties
 UEnemyMovementComponent::UEnemyMovementComponent()
@@ -191,7 +191,7 @@ void UEnemyMovementComponent::MoveToPlayer(const float AcceptanceRadius, bool bU
 	if (!OwningActor) return;
 	if (OwningActor->GetController() == nullptr) return;
 	
-	const AMyRoguieCharacter* PlayerCharacter = OwningActor->GetPlayerDetectorComponent()->GetPlayerCharacter();
+	const ARoguieCharacter* PlayerCharacter = OwningActor->GetPlayerDetectorComponent()->GetPlayerCharacter();
 	if (!PlayerCharacter) return;
 
 	AAIController* AIController = Cast<AAIController>(OwningActor->GetController());

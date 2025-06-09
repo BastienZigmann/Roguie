@@ -3,10 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "Components/Character/CharacterBaseComponent.h"
 #include "Core/Types/CombatTypes.h"
-#include "Data/WeaponAnimationData.h"
-#include "Utility/Logger.h"
+#include "Data/DataTables/WeaponAnimationData.h"
+#include "Utils/Logger.h"
 #include "CharacterCombatComponent.generated.h"
 
 // UCharacterCombatComponent handles the player's combat logic.
@@ -15,7 +15,7 @@
 class UBoxComponent;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UCharacterCombatComponent : public UActorComponent, public FLogger
+class ROGUIE_API UCharacterCombatComponent : public UCharacterBaseComponent
 {
 	GENERATED_BODY()
 
@@ -24,42 +24,34 @@ public:
 	UCharacterCombatComponent();
 	
 	void StartAttack();
-	UFUNCTION(BlueprintCallable)
-	void EndAttackMove(); // Called from ABP
-	UFUNCTION(BlueprintCallable)
-	void OpenNextAttackBuffer(); // Called from ABP
-	void ResetComboState();
-
-	UFUNCTION(BlueprintCallable)
-	void TriggerSlashHit(); // Called from ABP
-	UFUNCTION(BlueprintCallable)
-	void TriggerStabHit(); // Called from ABP
-
+	void TriggerHit();
+	
 	// Called by WeaponComponent on equip
 	void ApplyWeaponAnimationSet(const FWeaponAnimationSet& AnimSet, int32 DefaultComboLength);
-
+	
 	UAnimMontage* GetNextComboMontage() const;
-
-protected:
+	
+	protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	
 private:
-	UPROPERTY()
-	TObjectPtr<UBoxComponent> SlashAttackCollisionBox;
-	UPROPERTY()
-	TObjectPtr<UBoxComponent> StabAttackCollisionBox;
-	void SetupAttackHitBoxes();
 
-	UPROPERTY()
-	TObjectPtr<class AMyRoguieCharacter> OwningActor;
-	UPROPERTY()
-	TArray<TObjectPtr<UAnimMontage>> AttackComboMontages;
+	float ComputeDamage(class AEnemyBase* HitEnemy);
 
+	UFUNCTION(BlueprintCallable, Category = "Combat")
+	void EndAttackMove(bool bInterrupted);
+	void ResetComboState();
+	
 	int32 CurrentAttackCombo = 0;
-	FAttackBuffer AttackBuffer;
-	FTimerHandle WeaponComboResetTimer;
+	FTimerHandle WeaponComboResetTimer; // Reset Combo
 	float ComboResetTime = 0.2f;
+	// Buffer management
+	FAttackBuffer AttackBuffer;
+	FTimerHandle OpenBufferTimer;
+	float BufferOpeningTimeBeforeEndOfMove = 0.4f; // time before end of attack to open buffer
+	float BufferClosingTimeAfterEndOfMove = 0.2f; // time after end of attack to close buffer
+	void OpenNextAttackBuffer();
+	bool HasBufferedAttack() const { return AttackBuffer.bInputReceived; }
 
 };

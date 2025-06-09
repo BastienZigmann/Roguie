@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "EnemyComponentBase.h"
+#include "EnemyBaseComponent.h"
 #include "PlayerDetector.generated.h"
 
-class AMyRoguieCharacter;
+class ARoguieCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UPlayerDetector : public UEnemyComponentBase
+class ROGUIE_API UPlayerDetector : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 
@@ -23,7 +23,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool HasSpottedPlayer() const { return bIsPlayerDetectedInRange; }
 	FVector GetLastKnownPlayerLocation() const { return LastKnownPlayerLocation; }
-	AMyRoguieCharacter* GetPlayerCharacter();
+	ARoguieCharacter* GetPlayerCharacter();
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPositionUpdate);
 	UPROPERTY(BlueprintAssignable)
@@ -53,7 +53,7 @@ private:
 	float DetectionRadius = 1000.0f;
 	float PlayerHittableDistance = 200.f;
 
-	AMyRoguieCharacter* CachedCharacter = nullptr;
+	ARoguieCharacter* CachedCharacter = nullptr;
 	FVector LastKnownPlayerLocation;
 	float LocationReachedDelta = 100.f;
 

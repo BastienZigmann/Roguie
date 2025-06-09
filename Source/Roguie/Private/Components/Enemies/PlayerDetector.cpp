@@ -3,9 +3,9 @@
 
 #include "Components/Enemies/PlayerDetector.h"
 #include <Kismet/GameplayStatics.h>
-#include "Characters/MyRoguieCharacter.h"
+#include "Characters/RoguieCharacter.h"
 #include "Enemies/EnemyBase.h"
-#include "Enemies/EnemyDataAsset.h"
+#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UPlayerDetector::UPlayerDetector()
@@ -17,7 +17,7 @@ UPlayerDetector::UPlayerDetector()
 
 	LastKnownPlayerLocation = FVector::ZeroVector;
 
-	//EnableDebug();
+	// EnableDebug();
 }
 
 
@@ -61,33 +61,30 @@ bool UPlayerDetector::HasLineOfSight()
 {
 	if (!CheckReferences()) return false;
 
-	UWorld* World = GetWorld();
-	FHitResult HitResult;
-	FVector Start = OwningActor->GetActorLocation();
-	FVector End = GetPlayerCharacter()->GetActorLocation();
+ 	UWorld* World = GetWorld();
+    FHitResult HitResult;
+    FVector Start = OwningActor->GetActorLocation();
+    FVector End = GetPlayerCharacter()->GetActorLocation();
 
-	// Ignore all enemies in the scene
-	TArray<AActor*> IgnoredEnemies;
-	UGameplayStatics::GetAllActorsOfClass(World, AEnemyBase::StaticClass(), IgnoredEnemies);
+    // Ignore the owning actor
+    FCollisionQueryParams QueryParams;
+    QueryParams.AddIgnoredActor(OwningActor);
+    QueryParams.bTraceComplex = true;
 
-	FCollisionQueryParams QueryParams;
-	for (AActor* Enemy : IgnoredEnemies)
-	{
-		QueryParams.AddIgnoredActor(Enemy);
-	}
-	QueryParams.AddIgnoredActor(OwningActor);
-	QueryParams.bTraceComplex = true;
+    // Create a custom collision that only detects world static objects that would block vision
+    FCollisionObjectQueryParams ObjectQueryParams;
+    ObjectQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+    
+    // If the trace hits anything, there's something blocking our view of the player
+    bool bHitObstacle = World->LineTraceSingleByObjectType(
+        HitResult,
+        Start,
+        End,
+        ObjectQueryParams,
+        QueryParams
+    );
 
-	// Perform the line trace
-	bool bHit = World->LineTraceSingleByChannel(
-		HitResult,
-		Start,
-		End,
-		ECC_Visibility,
-		QueryParams
-	);
-
-	return (bHit && HitResult.GetActor()->IsA(AMyRoguieCharacter::StaticClass()));
+    return !bHitObstacle; // We have line of sight if nothing was hit
 
 }
 
@@ -135,18 +132,18 @@ void UPlayerDetector::DetectPlayer()
 	}
 }
 
-AMyRoguieCharacter* UPlayerDetector::GetPlayerCharacter()
+ARoguieCharacter* UPlayerDetector::GetPlayerCharacter()
 {
 	if (!CachedCharacter)
 	{
 		TArray<AActor*> FoundActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AMyRoguieCharacter::StaticClass(), FoundActors);
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ARoguieCharacter::StaticClass(), FoundActors);
 		if (FoundActors.Num() == 0 || FoundActors.Num() > 1 || FoundActors[0] == nullptr)
 		{
 			ErrorLog("Too many or no players", this);
 			return nullptr;
 		}
-		CachedCharacter = Cast<AMyRoguieCharacter>(FoundActors[0]);
+		CachedCharacter = Cast<ARoguieCharacter>(FoundActors[0]);
 	}
 	return CachedCharacter;
 }

@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/Enemies/EnemyComponentBase.h"
+#include "Components/Enemies/EnemyBaseComponent.h"
 #include "Core/Types/CombatTypes.h"
-#include "Utility/Logger.h"
+#include "Utils/Logger.h"
 #include "StatusEffectComponent.generated.h"
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UStatusEffectComponent : public UEnemyComponentBase
+class ROGUIE_API UStatusEffectComponent : public UEnemyBaseComponent
 {
 	GENERATED_BODY()
 
