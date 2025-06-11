@@ -66,4 +66,5 @@ ehthumbs.db
 Thumbs.db
 
 # Personal Project files
-Documents/
+Documents/*
+!Documents/Screenshots
