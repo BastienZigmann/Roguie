@@ -14,7 +14,7 @@
 #include "Components/Enemies/StatusEffectComponent.h"
 #include "Components/Enemies/EnemyAIController.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 #define PATH_WIDGET_HEALTHBAR "/Game/UI/Enemy/WBP_EnemyHealthBar"
 

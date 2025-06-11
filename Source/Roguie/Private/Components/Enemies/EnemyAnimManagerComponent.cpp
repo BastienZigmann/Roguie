@@ -4,7 +4,7 @@
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyCombatComponent.h"
 #include "Enemies/EnemyBase.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include "Core/Types/EnemyTypes.h"
 
 // Sets default values for this component's properties

@@ -8,7 +8,7 @@
 #include "Components/HealthComponent.h"
 #include "Enemies/EnemyBase.h"
 #include "Utils/Logger.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UEnemyBehaviorComponent::UEnemyBehaviorComponent()

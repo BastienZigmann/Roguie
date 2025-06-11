@@ -7,7 +7,7 @@
 #include "CharacterDashComponent.generated.h"
 
 USTRUCT()
-struct FDashCharge
+struct ROGUIE_API FDashCharge
 {
     GENERATED_BODY()
 

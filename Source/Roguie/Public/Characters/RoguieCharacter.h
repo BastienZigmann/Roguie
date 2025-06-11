@@ -9,7 +9,7 @@
 #include "Core/Types/CharacterTypes.h"
 #include "Core/Types/CombatTypes.h"
 #include "Utils/Logger.h"
-#include "Data/DataAssets/Characters/CharacterDataAsset.h"
+#include "Core/Data/DataAssets/Characters/CharacterDataAsset.h"
 #include "RoguieCharacter.generated.h"
 
 class UInputAction;

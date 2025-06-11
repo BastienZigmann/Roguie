@@ -12,7 +12,7 @@ enum class EWeaponType : uint8
 };
 
 USTRUCT(BlueprintType)
-struct FWeaponStatBlock // TODO: Core/Types
+struct ROGUIE_API FWeaponStatBlock // TODO: Core/Types
 {
     GENERATED_BODY()
 

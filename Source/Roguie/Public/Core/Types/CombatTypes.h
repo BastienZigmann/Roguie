@@ -4,7 +4,7 @@
 #include "CombatTypes.generated.h"
 
 USTRUCT()
-struct FAttackBuffer
+struct ROGUIE_API FAttackBuffer
 {
 	GENERATED_BODY()
 
@@ -21,6 +21,7 @@ struct FAttackBuffer
 UENUM(BlueprintType)
 enum class EStatusEffectType : uint8
 {
+	
 	Stun,
 	Knockback,
 	Slow,

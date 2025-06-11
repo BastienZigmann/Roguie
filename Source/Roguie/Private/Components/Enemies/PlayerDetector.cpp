@@ -5,7 +5,7 @@
 #include <Kismet/GameplayStatics.h>
 #include "Characters/RoguieCharacter.h"
 #include "Enemies/EnemyBase.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 
 // Sets default values for this component's properties
 UPlayerDetector::UPlayerDetector()
