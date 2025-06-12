@@ -6,6 +6,8 @@
 #include "Components/RoguieBaseComponent.h"
 #include "DungeonBaseComponent.generated.h"
 
+class AMapGenerator;
+
 /**
  * 
  */
@@ -23,9 +25,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	UPROPERTY()
-	TObjectPtr<AActor> OwningActor;
+	TObjectPtr<AMapGenerator> OwningActor;
 
-	AActor* GetOwningActor();
+	AMapGenerator* GetOwningActor();
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

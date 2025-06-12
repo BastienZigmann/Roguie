@@ -2,6 +2,7 @@
 
 
 #include "Components/Dungeon/DungeonBaseComponent.h"
+#include "DungeonGeneration/MapGenerator.h"
 
 // Sets default values for this component's properties
 UDungeonBaseComponent::UDungeonBaseComponent()
@@ -19,7 +20,7 @@ void UDungeonBaseComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = GetOwnerTyped<AActor>();
+	OwningActor = GetOwnerTyped<AMapGenerator>();
 	if (!OwningActor)
 	{
 		ErrorLog(TEXT("Owning character is null!"), this);
@@ -28,7 +29,7 @@ void UDungeonBaseComponent::BeginPlay()
 	
 }
 
-AActor* UDungeonBaseComponent::GetOwningActor()
+AMapGenerator* UDungeonBaseComponent::GetOwningActor()
 {
 	return OwningActor;
 }

@@ -7,8 +7,6 @@
 #include "Engine/DataAsset.h"
 #include "MapDataAsset.generated.h"
 
-// TODO Add animation blueprint here then affect it in MapBase
-
 /**
  * 
  */
@@ -21,28 +19,36 @@ public:
 
 	// --- Map Data
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 MapWidth = 20;
+	int32 MapWidth = 10; // Size of the map in Cells (ie rooms)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 MapHeight = 20;
+	int32 MapHeight = 10; // Size of the map in Cells (ie rooms)
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	float TileSize = 100.0f;
+	int32 CellNumberOfTilesX = 10; // Number of tiles in the cell on X axis
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	int32 CellNumberOfTilesY = 10; // Number of tiles in the cell on Y axis
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	float TileSize = 400.0f; // Size of the standard floor tile
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
 	int32 Seed = 0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	EAssetsAnchorType AssetsAnchorRule = EAssetsAnchorType::Center; // Anchor type for the map elements
+
 	// --- Visual Elements
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
 	TArray<FMapElement> Walls;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
 	TArray<FMapElement> Floors;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
 	TArray<FMapElement> Props;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
 	TArray<FMapElement> Doors;
 
 };

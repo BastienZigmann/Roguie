@@ -23,16 +23,10 @@ public:
 	// Sets default values for this component's properties
 	UDungeonGenerationComponent();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Map Generation")
-    TObjectPtr<UMapDataAsset> MapElementsData;
-
-	void GenerateDungeonMap();
+	FDungeonMap GenerateDungeonMap(int32 SizeX, int32 SizeY);
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-private:
-	FDungeonMap DungeonMap; // The dungeon map to be built
 
 };

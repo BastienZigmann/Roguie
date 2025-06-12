@@ -21,6 +21,10 @@ public:
 	void ErrorLog(const FString& Msg, const UObject* Context = nullptr) const;
 
 	virtual void DebugTraces();
+	void DebugTraceSphere(UWorld* World, const FVector& Location, float Radius, const FColor& Color, float Thickness = 1.0f, float Duration = 5.0f, bool Persistent = false) const;
+	void DebugTraceCircle(UWorld* World, const FVector& Location, float Radius, const FColor& Color, float Thickness = 1.0f, float Duration = 5.0f, bool Persistent = false) const;
+	void DebugTraceRectangle(UWorld* World, const FVector& Location, const FRotator& Rotation, const FVector& Extent, const FColor& Color, float Thickness = 1.0f, float Duration = 5.0f, bool Persistent = false) const;
+	void DebugTraceLine(UWorld* World, const FVector& Start, const FVector& End, const FColor& Color, float Thickness = 1.0f, float Duration = 5.0f, bool Persistent = false) const;
 
 private:
 	FString GeneratePrefix(const UObject* Context) const;

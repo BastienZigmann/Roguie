@@ -3,6 +3,7 @@
 
 #include "Components/Dungeon/DungeonGenerationComponent.h"
 #include "Core/Data/DataAssets/Map/MapDataAsset.h"
+#include "Core/Types/MapTypes.h"
 
 // Sets default values for this component's properties
 UDungeonGenerationComponent::UDungeonGenerationComponent()
@@ -11,7 +12,7 @@ UDungeonGenerationComponent::UDungeonGenerationComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-	// ...
+	EnableDebug();
 }
 
 
@@ -20,18 +21,13 @@ void UDungeonGenerationComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
+	if (!OwningActor) return;
 	
 }
 
-void UDungeonGenerationComponent::GenerateDungeonMap()
+FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap(int32 SizeX, int32 SizeY)
 {
-	if (!MapElementsData)
-	{
-		ErrorLog(TEXT("MapElementsData is not set!"), this);
-		return;
-	}
-
-	DungeonMap = FDungeonMap(MapElementsData->MapWidth, MapElementsData->MapHeight);
-
+	DebugLog("Generating dungeon map...", this);
+	FDungeonMap DungeonMap = FDungeonMap(SizeX, SizeY);
+	return DungeonMap;
 }

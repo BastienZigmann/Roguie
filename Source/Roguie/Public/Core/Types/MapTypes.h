@@ -15,7 +15,7 @@ struct ROGUIE_API FRoom
 	int32 LengthY; // Number of tiles in the room on Y axis
 
 	FRoom()
-		: Position(FVector2D::ZeroVector), LengthX(1), LengthY(1)
+		: Position(FVector2D::ZeroVector), LengthX(5), LengthY(5)
 	{
 	}
 
@@ -32,18 +32,26 @@ struct ROGUIE_API FCell
 	GENERATED_BODY()
 
 	FRoom Room; // Rooms in this cell
-	int32 TileSizeX; // Number of tiles in the cell on X axis
-	int32 TileSizeY; // Number of tiles in the cell on Y axis
+	int32 SizeX; // Size of the Cell in tiles
+	int32 SizeY; // Size of the Cell in tiles
+	bool IsBanned = false;
 
 	FCell()
-		: TileSizeX(5), TileSizeY(5)
+		: SizeX(5), SizeY(5), IsBanned(false)
 	{
 		Room = FRoom();
 	}
 	
-	FCell(const FRoom& InRoom, int32 InTileSizeX, int32 InTileSizeY)
-		: Room(InRoom), TileSizeX(InTileSizeX), TileSizeY(InTileSizeY)
+	FCell(const FRoom& InRoom)
+		: Room(InRoom)
 	{
+	}
+
+	bool IsTilesInRoom(int32 X, int32 Y) const
+	{
+		if (IsBanned) return false; // If the cell is banned, no tiles are in the room
+		return Room.Position.X <= X && X < Room.Position.X + Room.LengthX &&
+			   Room.Position.Y <= Y && Y < Room.Position.Y + Room.LengthY;
 	}
 
 };
@@ -108,6 +116,16 @@ struct ROGUIE_API FDungeonMap
 		return &Cells[X + Y * SizeX]; 
 	}
 
+	const FCell* GetCell(int32 X, int32 Y) const
+	{
+		if (X < 0 || X >= SizeX || Y < 0 || Y >= SizeY)
+		{
+			UE_LOG(LogTemp, Error, TEXT("GetCell: Invalid coordinates (%d, %d)"), X, Y);
+			return nullptr; // Return nullptr for invalid coordinates
+		} 
+		return &Cells[X + Y * SizeX]; 
+	}
+
 };
 
 // Used for data asset to contain map meshes or BP
@@ -117,8 +135,25 @@ struct ROGUIE_API FMapElement
 	GENERATED_BODY()
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Map")
-	TObjectPtr<UStaticMesh> MapMesh; // Mesh for the map
+	TObjectPtr<UStaticMesh> StaticMesh; // Mesh for the map
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
     TSubclassOf<AActor> BlueprintClass = nullptr;
+};
+
+UENUM(BlueprintType)
+enum class EAssetsAnchorType : uint8
+{
+	None        UMETA(DisplayName = "None"),
+	TopLeft 	UMETA(DisplayName = "Top Left"),
+	Center 		UMETA(DisplayName = "Center")
+};
+
+UENUM()
+enum class ECardinalDirection : uint8
+{
+	North       UMETA(DisplayName = "North"),
+	East        UMETA(DisplayName = "East"),
+	South       UMETA(DisplayName = "South"),
+	West        UMETA(DisplayName = "West")
 };
