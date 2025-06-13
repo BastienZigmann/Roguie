@@ -73,5 +73,16 @@ FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap(int32 SizeX, int32 S
 
 FCell UDungeonGenerationComponent::InitRandomizedCell()
 {
-	return FCell();
+	FRoom RandomRoom = InitRandomizedRoom();
+	FCell NewCell = FCell(RandomRoom);
+	
+	return NewCell;
+}
+
+FRoom UDungeonGenerationComponent::InitRandomizedRoom()
+{
+	int32 RoomLengthX = RandomStream.RandRange(4, MapElementsDataAsset->CellNumberOfTilesX);
+	int32 RoomLengthY = RandomStream.RandRange(4, MapElementsDataAsset->CellNumberOfTilesY);
+	FIntCoordinate RoomPosition = FIntCoordinate(RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesX - RoomLengthX), RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesY - RoomLengthY));
+	return FRoom(RoomPosition, RoomLengthX, RoomLengthY);
 }

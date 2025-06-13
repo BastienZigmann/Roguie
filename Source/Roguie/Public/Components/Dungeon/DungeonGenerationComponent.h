@@ -31,6 +31,7 @@ protected:
 
 private:
 	FCell InitRandomizedCell();
+	FRoom InitRandomizedRoom();
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
