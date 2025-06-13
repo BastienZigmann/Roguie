@@ -32,17 +32,17 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	// Reference to the data asset containing map elements
+	UPROPERTY()
+	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
 	FRandomStream RandomStream;
 
-	UMapDataAsset* GetMapElementsDataAsset() const { return OwningActor->GetMapElementsDataAsset(); }
+	void BuildCell(const FIntCoordinate& CellCoord, const FCell* Cell);
 
-	void BuildCell(const int32 CellIndexX, const int32 CellIndexY, const FCell* Cell);
-
+	FTransform GetTileOffset(const FIntCoordinate& TileCoord);
+	FTransform GetCellPositionTransform(const FIntCoordinate& CellCoord);
+	
 	void SpawnTileFloor(FTransform TileTransform);
 	void SpawnTileWalls(FTransform TileTransform,  const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
-
-	FTransform GetTileOffset(const int32 PosX, const int32 PosY);
-	FTransform GetCellPositionTransform(const int32 PosX, const int32 PosY);
-
 };

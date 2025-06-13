@@ -36,7 +36,10 @@ public:
 	int32 Seed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	EAssetsAnchorType AssetsAnchorRule = EAssetsAnchorType::Center; // Anchor type for the map elements
+	int32 IntendedNumberOfRooms = 10;
+
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	// EAssetsAnchorType AssetsAnchorRule = EAssetsAnchorType::Center; // Anchor type for the map elements
 
 	// --- Visual Elements
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")

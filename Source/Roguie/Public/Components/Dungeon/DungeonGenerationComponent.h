@@ -29,4 +29,15 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+private:
+	FCell InitRandomizedCell();
+
+	UPROPERTY()
+	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
+	FRandomStream RandomStream;
+
+	TSet<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord, const FDungeonMap& DungeonMap) const;
+	ECardinalDirection GetRandomDirection() const;
+	// bool MapHasEmptyCellsLeft() const;
+
 };
