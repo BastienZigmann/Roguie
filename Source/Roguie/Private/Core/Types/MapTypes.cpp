@@ -20,8 +20,34 @@ ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction)
 // **************************************
 // ************ Corridors ***************
 // **************************************
+
+FCorridor::FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd)
+    : ParentMap(InParentMap), StartingCellCoord(InStart), EndingCellCoord(InEnd)
+{
+    if (!ParentMap)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FCorridor created with null ParentMap!"));
+        return;
+    }
+    StartingTile = FIntCoordinate::ZeroCoord;
+    EndingTile = FIntCoordinate::ZeroCoord;
+}
+
+const FCell* FCorridor::GetStartingCell() const
+{
+    return ParentMap ? ParentMap->GetCell(StartingCellCoord) : nullptr;
+}
+
+const FCell* FCorridor::GetEndingCell() const
+{
+    return ParentMap ? ParentMap->GetCell(EndingCellCoord) : nullptr;
+}
+
 void FCorridor::AddPathTile(FIntCoordinate Tile)
 {
+    const FCell* StartingCell = GetStartingCell();
+    const FCell* EndingCell = GetEndingCell();
+
     if (!StartingCell || !EndingCell)
     {
         UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting or Ending cell is not set."));
@@ -211,7 +237,7 @@ void FDungeonMap::FillCellTiles(const FIntCoordinate& CellCoord)
 
 void FDungeonMap::FillCorridorsTiles(const FCorridor& Corridor)
 {
-    if (!Corridor.StartingCell || !Corridor.EndingCell || Corridor.PathTiles.Num() == 0)
+    if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell() || Corridor.PathTiles.Num() == 0)
     {
         UE_LOG(LogTemp, Error, TEXT("FillCorridorTiles: Corridor is not properly initialized."));
         return; // Handle uninitialized corridor
@@ -293,7 +319,7 @@ void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCell, const FIntCoor
 {
     if (StartingCell == EndingCell) return; // No corridor needed if start and end are the same
 
-    FCorridor NewCorridor(GetConstCellByCoordinates(StartingCell), GetConstCellByCoordinates(EndingCell));
+    FCorridor NewCorridor(this, StartingCell, EndingCell);
 
     Corridors.Add(NewCorridor);
 }

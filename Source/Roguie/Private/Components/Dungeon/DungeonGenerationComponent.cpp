@@ -124,10 +124,10 @@ FRoom UDungeonGenerationComponent::CreateRandomizedRoom()
 
 void UDungeonGenerationComponent::ComputeCorridors(FDungeonMap& DungeonMap)
 {
-	DebugLog("Computing corridors...", this);
 	for (FCorridor& Corridor : DungeonMap.Corridors)
 	{
-		if (!Corridor.StartingCell || !Corridor.EndingCell)
+		DebugLog("Computing corridor: " + Corridor.ToString(), this);
+		if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell())
 		{
 			DebugLog("Invalid corridor, skipping", this);
 			continue; // Skip invalid corridors
@@ -156,22 +156,22 @@ void UDungeonGenerationComponent::PickCorridorStartAndEndTile(const FDungeonMap&
 	TArray<FIntCoordinate> PotentialTiles;
 	int32 RandomIndex;
 	// Get potential tiles for the corridor's starting and ending positions
-	PotentialTiles.Append(GetPotentialCorridorPassageWay(DungeonMap, *Corridor.StartingCell, Direction));
-	if (PotentialTiles.Num() == 0)
-	{
-		DebugLog("No potential tiles found for corridor starting position", this);
-		return; // No potential tiles found, cannot proceed
-	}
+	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetStartingCell(), Direction);
+	// if (PotentialTiles.Num() == 0)
+	// {
+	// 	DebugLog("No potential tiles found for corridor starting position", this);
+	// 	return; // No potential tiles found, cannot proceed
+	// }
 	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
 	Corridor.StartingTile = PotentialTiles[RandomIndex]; // HERE OUT OF BOUND
 
 	PotentialTiles.Empty(); // Clear potential tiles for the ending position
-	PotentialTiles.Append(GetPotentialCorridorPassageWay(DungeonMap, *Corridor.EndingCell, GetOppositeDirection(Direction)));
-	if (PotentialTiles.Num() == 0)
-	{
-		DebugLog("No potential tiles found for corridor ending position", this);
-		return; // No potential tiles found, cannot proceed
-	}
+	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetEndingCell(), GetOppositeDirection(Direction));
+	// if (PotentialTiles.Num() == 0)
+	// {
+	// 	DebugLog("No potential tiles found for corridor ending position", this);
+	// 	return; // No potential tiles found, cannot proceed
+	// }
 	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
 	Corridor.EndingTile = PotentialTiles[RandomIndex];
 

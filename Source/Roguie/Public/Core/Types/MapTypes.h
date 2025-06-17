@@ -153,22 +153,26 @@ struct ROGUIE_API FCorridor
 {
 	GENERATED_BODY()
 
-	const FCell* StartingCell; // Cells where corridor starts IN THE MAP
-	const FCell* EndingCell; // Cells where corridor ends IN THE MAP
+	FDungeonMap* ParentMap; // Pointer to the map this corridor belongs to
+	FIntCoordinate StartingCellCoord; // Cells where corridor starts IN THE MAP
+	FIntCoordinate EndingCellCoord; // Cells where corridor ends IN THE MAP
 	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE MAP
 	TSet<FIntCoordinate> PathTiles; // Tiles in the corridor IN THE MAP
 
-	FCorridor() : FCorridor(nullptr, nullptr) { }
-	FCorridor(const FCell* InStart, const FCell* InEnd)
-	 : StartingCell(InStart), EndingCell(InEnd)
-	{
-		StartingTile = FIntCoordinate::ZeroCoord;
-		EndingTile = FIntCoordinate::ZeroCoord;
-	}
+	FCorridor() : FCorridor(nullptr, FIntCoordinate::ZeroCoord, FIntCoordinate::ZeroCoord) { }
+	FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd);
+
+	const FCell* GetStartingCell() const;
+	const FCell* GetEndingCell() const;
 
 	void SetStartingTile(const FIntCoordinate& Tile) { StartingTile = Tile; }
 	void SetEndingTile(const FIntCoordinate& Tile) { EndingTile = Tile; }
 	void AddPathTile(FIntCoordinate Tile);
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Corridor from %s to %s with %d path tiles"), 
+			*StartingTile.ToString(), *EndingTile.ToString(), PathTiles.Num());
+	}
 
 };
 
@@ -236,7 +240,11 @@ struct ROGUIE_API FCell
 	int32 IndexInCellsArray; // Index in FDungeon Cell array
 	int32 IndexInTileArray; // Index in FDungeon Tile array
 
-	FCell() : FCell(nullptr, FIntCoordinate()) { }
+	FCell()
+		: ParentMap(nullptr), CellCoord(FIntCoordinate::ZeroCoord), BaseTileCoordinate(FIntCoordinate::ZeroCoord),
+		  IndexInCellsArray(-1), IndexInTileArray(-1)
+	{
+	}
 	FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& InRoom = FRoom());
 	FTile& GetBaseTile();
 	bool IsTileInRoom(const FIntCoordinate& Coord) const; // world tiles coordinates, not room based !
