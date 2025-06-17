@@ -82,7 +82,7 @@ void UDungeonWorldBuilderComponent::BuildCell(const FIntCoordinate& CellCoord, c
         for (int32 y = 0; y < CellNumberOfTilesY; y++)
         {
             FIntCoordinate TileCoord(x, y);
-            if (Cell->IsTilesInRoom(TileCoord))
+            if (Cell->IsTileInRoom(TileCoord))
             {
                 FTransform TileCenterTransform = GetCellPositionTransform(CellCoord) + GetTileOffset(TileCoord) + FTransform(FVector(TileSize / 2.0f, TileSize / 2.0f, 0.0f));
                 DebugLog(FString::Printf(TEXT("Cell position %s Tile position %s"), *CellCoord.ToString(), *TileCoord.ToString()), this);
@@ -92,10 +92,10 @@ void UDungeonWorldBuilderComponent::BuildCell(const FIntCoordinate& CellCoord, c
 
                 DebugLog(FString::Printf(TEXT("Spawning tile walls..")), this);
                 TArray<ECardinalDirection> Directions;
-                if (!Cell->IsTilesInRoom(TileCoord.GetNorthNeighbor())) Directions.Add(ECardinalDirection::North);
-                if (!Cell->IsTilesInRoom(TileCoord.GetEastNeighbor())) Directions.Add(ECardinalDirection::East);
-                if (!Cell->IsTilesInRoom(TileCoord.GetSouthNeighbor())) Directions.Add(ECardinalDirection::South);
-                if (!Cell->IsTilesInRoom(TileCoord.GetWestNeighbor())) Directions.Add(ECardinalDirection::West);
+                if (!Cell->IsTileInRoom(TileCoord.GetNorthNeighbor())) Directions.Add(ECardinalDirection::North);
+                if (!Cell->IsTileInRoom(TileCoord.GetEastNeighbor())) Directions.Add(ECardinalDirection::East);
+                if (!Cell->IsTileInRoom(TileCoord.GetSouthNeighbor())) Directions.Add(ECardinalDirection::South);
+                if (!Cell->IsTileInRoom(TileCoord.GetWestNeighbor())) Directions.Add(ECardinalDirection::West);
                 SpawnTileWalls(TileCenterTransform, Directions);
             }
 

@@ -34,9 +34,11 @@ private:
 	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord);
 	FRoom CreateRandomizedRoom();
 	
-	void CreateRandomizedCorridor(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell);
-	ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
-	FIntCoordinate PickCorridorEntryTile(const FDungeonMap& DungeonMap, const FIntCoordinate& CellCoord, const ECardinalDirection Direction) const;
+	void ComputeCorridors(FDungeonMap& DungeonMap);
+	ECardinalDirection ComputeDirection(const FCorridor& Corridor) const;
+	void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor, const ECardinalDirection Direction) const;
+	TArray<FIntCoordinate> GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const ;
+	void CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor);
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;

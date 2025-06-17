@@ -23,6 +23,8 @@ enum class ECardinalDirection : uint8
 	West        UMETA(DisplayName = "West")
 	
 };
+ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction);
+
 
 template<typename T>
 struct ROGUIE_API TCoordinate
@@ -51,6 +53,15 @@ struct ROGUIE_API TCoordinate
 			return TCoordinate(0, 0); // Handle division by zero
 		}
 		return TCoordinate(x / Scalar, y / Scalar);
+	}
+	TCoordinate operator%(const TCoordinate& Other) const
+	{
+		if (Other.x == 0 || Other.y == 0)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Division by zero in TCoordinate::operator%%"));
+			return TCoordinate(0, 0); // Handle division by zero
+		}
+		return TCoordinate(x % Other.x, y % Other.y);
 	}
 	// Hash function for using TCoordinate in TMap/TSet
 	friend uint32 GetTypeHash(const TCoordinate& Coordinate) { return HashCombine(GetTypeHash(Coordinate.x), GetTypeHash(Coordinate.y)); }
@@ -142,17 +153,22 @@ struct ROGUIE_API FCorridor
 {
 	GENERATED_BODY()
 
-	FIntCoordinate StartingCell, EndingCell;
-	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE ROOM
-	TArray<FIntCoordinate> Tiles; 
+	const FCell* StartingCell; // Cells where corridor starts IN THE MAP
+	const FCell* EndingCell; // Cells where corridor ends IN THE MAP
+	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE MAP
+	TSet<FIntCoordinate> PathTiles; // Tiles in the corridor IN THE MAP
 
-	FCorridor() : FCorridor(FIntCoordinate::ZeroCoord, FIntCoordinate::ZeroCoord) { }
-	FCorridor(const FIntCoordinate& InStart, const FIntCoordinate& InEnd)
+	FCorridor() : FCorridor(nullptr, nullptr) { }
+	FCorridor(const FCell* InStart, const FCell* InEnd)
 	 : StartingCell(InStart), EndingCell(InEnd)
 	{
 		StartingTile = FIntCoordinate::ZeroCoord;
 		EndingTile = FIntCoordinate::ZeroCoord;
 	}
+
+	void SetStartingTile(const FIntCoordinate& Tile) { StartingTile = Tile; }
+	void SetEndingTile(const FIntCoordinate& Tile) { EndingTile = Tile; }
+	void AddPathTile(FIntCoordinate Tile);
 
 };
 
@@ -215,14 +231,17 @@ struct ROGUIE_API FCell
 
 	FDungeonMap* ParentMap; // Pointer to the map this cell belongs to
 	FIntCoordinate CellCoord; // Position of the cell in the map
+	FIntCoordinate BaseTileCoordinate; // Position of the base tile in the map (top-left corner of the cell)
 	FRoom Room; // Rooms in this cell
-	int32 IndexInTilesArray; // Index in FDungeon Tile array
+	int32 IndexInCellsArray; // Index in FDungeon Cell array
+	int32 IndexInTileArray; // Index in FDungeon Tile array
 
 	FCell() : FCell(nullptr, FIntCoordinate()) { }
 	FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& InRoom = FRoom());
-	bool IsTilesInRoom(const FIntCoordinate& Coord) const;
+	FTile& GetBaseTile();
+	bool IsTileInRoom(const FIntCoordinate& Coord) const; // world tiles coordinates, not room based !
+	bool IsTileInRoom(const FTile& Tile) const; // world tiles coordinates, not room based !
 	const FCell& GetNeighbor(ECardinalDirection Direction) const;
-	
 };
 
 USTRUCT()
@@ -267,12 +286,12 @@ struct ROGUIE_API FDungeonMap
 
 	bool IsOccupied(const FCell& Cell) const {
 		CheckCellCoordinates(Cell.CellCoord);
-		return OccupiedCells[Cell.IndexInTilesArray];
+		return OccupiedCells[Cell.IndexInCellsArray];
 	}
 
 	bool IsBanned(const FCell& Cell) const {
 		CheckCellCoordinates(Cell.CellCoord);
-		return BannedCells[Cell.IndexInTilesArray];
+		return BannedCells[Cell.IndexInCellsArray];
 	}
 
 	int32 GetCellIndex(const FIntCoordinate& Coord) const
@@ -280,21 +299,25 @@ struct ROGUIE_API FDungeonMap
 		CheckCellCoordinates(Coord);
 		return Coord.x + Coord.y * NbCellsX;
 	}
-		
+	
+	int32 GetTileIndex(const FIntCoordinate& TileCoord) const
+	{
+		CheckTileCoordinate(TileCoord);
+		return TileCoord.x + TileCoord.y * (NbCellsX * NbTilesInCellsX);
+	}
+
+	// Corridor management
+	void AddCorridor(const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell);
+
 private:
 	// Not to call alone, will erase corridors
 	void FillCellTiles(const FIntCoordinate& CellCoord);
-	
+	void FillCorridorsTiles(const FCorridor& Corridor);
+
 	// Get Tile Index in array
 	int32 GetTileIndex(const FTile& Tile) const
 	{
-		if (Tile.Position.x < 0 || Tile.Position.x >= NbCellsX * NbTilesInCellsX ||
-			Tile.Position.y < 0 || Tile.Position.y >= NbCellsY * NbTilesInCellsY)
-		{
-			UE_LOG(LogTemp, Error, TEXT("GetTileIndex: Invalid tile coordinates %s"), *Tile.Position.ToString());
-			return INDEX_NONE; // Handle invalid tile position
-		}
-		return Tile.Position.x + Tile.Position.y * (NbCellsX * NbTilesInCellsX);
+		return GetTileIndex(Tile.Position);
 	}
 
 	const FCell* GetConstCellByCoordinates(const FIntCoordinate& Coord) const
@@ -314,6 +337,16 @@ private:
 		if (CellCoord.x < 0 || CellCoord.x >= NbCellsX || CellCoord.y < 0 || CellCoord.y >= NbCellsY)
 		{
 			UE_LOG(LogTemp, Error, TEXT("Coordinates out of bounds: %s"), *CellCoord.ToString());
+			check(false); // Ensure this is caught during development
+		}
+	}
+
+	void CheckTileCoordinate(const FIntCoordinate& TileCoord) const
+	{
+		if (TileCoord.x < 0 || TileCoord.x >= NbCellsX * NbTilesInCellsX ||
+			TileCoord.y < 0 || TileCoord.y >= NbCellsY * NbTilesInCellsY)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Tile coordinates out of bounds: %s"), *TileCoord.ToString());
 			check(false); // Ensure this is caught during development
 		}
 	}
