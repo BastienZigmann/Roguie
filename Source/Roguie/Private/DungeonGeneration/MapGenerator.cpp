@@ -33,7 +33,7 @@ void AMapGenerator::BeginPlay()
 // For manual call
 void AMapGenerator::CreateDungeonMap()
 {
-	DungeonMap = DungeonGenerationComponent->GenerateDungeonMap(MapElementsDataAsset->MapWidth, MapElementsDataAsset->MapHeight);
+	DungeonMap = DungeonGenerationComponent->GenerateDungeonMap();
 	DungeonWorldBuilderComponent->BuildDungeon();
 }
 

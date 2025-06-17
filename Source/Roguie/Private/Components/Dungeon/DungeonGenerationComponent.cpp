@@ -13,7 +13,7 @@ UDungeonGenerationComponent::UDungeonGenerationComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-	//EnableDebug();
+	EnableDebug();
 }
 
 
@@ -34,55 +34,127 @@ void UDungeonGenerationComponent::BeginPlay()
 	
 }
 
-FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap(int32 SizeX, int32 SizeY)
+FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
 {
 	DebugLog("Generating dungeon map...", this);
-	FDungeonMap DungeonMap = FDungeonMap(SizeX, SizeY);
+	FDungeonMap DungeonMap = FDungeonMap(
+		MapElementsDataAsset->MapWidth,
+		MapElementsDataAsset->MapHeight,
+		MapElementsDataAsset->CellNumberOfTilesX,
+		MapElementsDataAsset->CellNumberOfTilesY
+	);
 
-	int32 CurrentCellIndexX = SizeX / 2;
-	int32 CurrentCellIndexY = SizeY / 2;
-	FIntCoordinate CurrentCellCoord(CurrentCellIndexX, CurrentCellIndexY);
+	FIntCoordinate CurrentCellCoord(MapElementsDataAsset->MapWidth / 2, MapElementsDataAsset->MapHeight / 2);
 	DebugLog("Starting cell at " + CurrentCellCoord.ToString(), this);
-	DungeonMap.SetCell(CurrentCellCoord, InitRandomizedCell());
-	int32 CurrentNumberOfRooms = 1;
+	DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, CurrentCellCoord));
 
-	// TODO Culling
-	DebugLog("Culling not implemented yet", this);
+	TArray<FIntCoordinate> PathStack;
+	PathStack.Push(CurrentCellCoord);
+
+	// Cell Culling
+	int NumberOfRoomsToCull = RandomStream.RandRange(0, DungeonMap.NbCellsX);
+	for (int n = 0; n < NumberOfRoomsToCull - 1; n++)
+	{
+		int x = RandomStream.RandRange(0, DungeonMap.NbCellsX - 1);
+		int y = RandomStream.RandRange(0, DungeonMap.NbCellsY - 1);
+		DungeonMap.BanCell(FIntCoordinate(x, y));
+	}
 
 	// Actual marching generation
-	while (CurrentNumberOfRooms < MapElementsDataAsset->IntendedNumberOfRooms)
+	while (DungeonMap.GetNumberOfOccupiedCells() < MapElementsDataAsset->IntendedNumberOfRooms && DungeonMap.HasAvailableCells())
 	{
 		TArray<ECardinalDirection> AvailableDirections = DungeonMap.GetAvailableDirections(CurrentCellCoord);
 		if (AvailableDirections.Num() == 0)
 		{
 			DebugLog("No available directions", this);
-			break;
+			if (PathStack.Num() == 0)
+			{
+				DebugLog("No more paths to explore, stopping generation", this);
+				break; // No more paths to explore
+			}
+			CurrentCellCoord = PathStack.Pop();
+			continue;
 		}
-		int32 RandomIndex = RandomStream.RandRange(0, AvailableDirections.Num() - 1);
-		CurrentCellCoord = CurrentCellCoord.GetNeighbor(AvailableDirections[RandomIndex]);
+		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1);
+		CurrentCellCoord = CurrentCellCoord.GetNeighbor(AvailableDirections[RandomDirection]);
 		DebugLog(FString::Printf(TEXT("Current cell is now %s"), *CurrentCellCoord.ToString()), this);
 
-		DungeonMap.SetCell(CurrentCellCoord, InitRandomizedCell());
-		CurrentNumberOfRooms++;
+		DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, CurrentCellCoord));
+		PathStack.Push(CurrentCellCoord);
 	}
 
-	DebugLog(FString::Printf(TEXT("Dungeon map generation completed with %d rooms"), CurrentNumberOfRooms), this);
+	DebugLog(FString::Printf(TEXT("Dungeon map generation completed with %d rooms"), DungeonMap.GetNumberOfOccupiedCells()), this);
 
 	return DungeonMap;
 }
 
-FCell UDungeonGenerationComponent::InitRandomizedCell()
+FCell UDungeonGenerationComponent::CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord)
 {
-	FRoom RandomRoom = InitRandomizedRoom();
-	FCell NewCell = FCell(RandomRoom);
-	
+	FRoom RandomRoom = CreateRandomizedRoom();
+	FCell NewCell = FCell(&DungeonMap, CellCoord, RandomRoom);
+	// TODO add culling ?
 	return NewCell;
 }
 
-FRoom UDungeonGenerationComponent::InitRandomizedRoom()
+FRoom UDungeonGenerationComponent::CreateRandomizedRoom()
 {
-	int32 RoomLengthX = RandomStream.RandRange(4, MapElementsDataAsset->CellNumberOfTilesX);
-	int32 RoomLengthY = RandomStream.RandRange(4, MapElementsDataAsset->CellNumberOfTilesY);
+	int32 RoomLengthX = FMath::Abs(RandomStream.RandRange(2, MapElementsDataAsset->CellNumberOfTilesX));
+	int32 RoomLengthY = FMath::Abs(RandomStream.RandRange(2, MapElementsDataAsset->CellNumberOfTilesY));
 	FIntCoordinate RoomPosition = FIntCoordinate(RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesX - RoomLengthX), RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesY - RoomLengthY));
 	return FRoom(RoomPosition, RoomLengthX, RoomLengthY);
+}
+
+void UDungeonGenerationComponent::CreateRandomizedCorridor(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell)
+{
+	FCorridor NewCorridor(StartingCell, EndingCell);
+
+	ECardinalDirection Direction = ComputeDirection(StartingCell, EndingCell);
+	NewCorridor.StartingTile = PickCorridorEntryTile(DungeonMap, StartingCell, Direction);
+	Direction = ComputeDirection(EndingCell, StartingCell);
+	NewCorridor.EndingTile = PickCorridorEntryTile(DungeonMap, EndingCell, Direction);
+
+
+
+	DungeonMap.Corridors.Add(NewCorridor);
+}
+
+ECardinalDirection UDungeonGenerationComponent::ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const
+{
+	FVector2D Displacement = Start.GetDisplacementVectorTo(End);
+	if (FMath::Abs(Displacement.X) > FMath::Abs(Displacement.Y))
+	{
+		return Displacement.X > 0 ? ECardinalDirection::East : ECardinalDirection::West;
+	}
+	else
+	{
+		return Displacement.Y > 0 ? ECardinalDirection::North : ECardinalDirection::South;
+	}
+}
+
+FIntCoordinate UDungeonGenerationComponent::PickCorridorEntryTile(const FDungeonMap& DungeonMap, const FIntCoordinate& CellCoord, const ECardinalDirection Direction) const
+{
+	TArray<FIntCoordinate> PotentialTiles;
+	// FCell* Cell = DungeonMap.GetCell(CellCoord);
+	// if (Direction == ECardinalDirection::North
+	// {
+	// 	int yOffset = 0;
+	// 	while (PotentialTiles.Num() == 0)
+	// 	{
+	// 		for (int i = 0; i < MapElementsDataAsset->CellNumberOfTilesX; i++)
+	// 		{
+				
+	// 			if (Cell->IsTilesInRoom(FIntCoordinate(i, yOffset)))
+	// 				PotentialTiles.Add(FIntCoordinate(i, yOffset));
+	// 		}
+	// 		if (PotentialTiles.Num() == 0)
+	// 			yOffset++;
+	// 	}
+	// }	
+	// if (Direction == ECardinalDirection::South)
+	// {
+
+	// }
+	
+	// return EntryTile;
+	return FIntCoordinate(0, 0); 
 }

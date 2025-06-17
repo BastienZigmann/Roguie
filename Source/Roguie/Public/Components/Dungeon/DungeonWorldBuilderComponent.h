@@ -44,5 +44,7 @@ private:
 	
 	void SpawnTileFloor(FTransform TileTransform);
 	void SpawnTileWalls(FTransform TileTransform,  const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
+	void SpawnCorridor();
+	void SpawnCorridorTile();
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
 };

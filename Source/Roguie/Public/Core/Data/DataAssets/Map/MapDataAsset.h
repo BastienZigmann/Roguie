@@ -18,19 +18,23 @@ class ROGUIE_API UMapDataAsset : public UDataAsset
 public:
 
 	// --- Map Data
+	// Number of map Cells (ie potential rooms)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 MapWidth = 10; // Size of the map in Cells (ie rooms)
+	int32 MapWidth = 10;
+	// Number of map Cells (ie potential rooms)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	int32 MapHeight = 10; 
 
+	// Number of tiles in every cells
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 MapHeight = 10; // Size of the map in Cells (ie rooms)
+	int32 CellNumberOfTilesX = 10; 
+	// Number of tiles in the cell on Y axis
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	int32 CellNumberOfTilesY = 10; 
 
+	// Size of the standard floor tile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 CellNumberOfTilesX = 10; // Number of tiles in the cell on X axis
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 CellNumberOfTilesY = 10; // Number of tiles in the cell on Y axis
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	float TileSize = 400.0f; // Size of the standard floor tile
+	float TileSize = 400.0f; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
 	int32 Seed = 0;

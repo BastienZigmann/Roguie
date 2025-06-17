@@ -23,15 +23,20 @@ public:
 	// Sets default values for this component's properties
 	UDungeonGenerationComponent();
 
-	FDungeonMap GenerateDungeonMap(int32 SizeX, int32 SizeY);
+	FDungeonMap GenerateDungeonMap();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 private:
-	FCell InitRandomizedCell();
-	FRoom InitRandomizedRoom();
+
+	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord);
+	FRoom CreateRandomizedRoom();
+	
+	void CreateRandomizedCorridor(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell);
+	ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
+	FIntCoordinate PickCorridorEntryTile(const FDungeonMap& DungeonMap, const FIntCoordinate& CellCoord, const ECardinalDirection Direction) const;
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
@@ -39,6 +44,5 @@ private:
 
 	TSet<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord, const FDungeonMap& DungeonMap) const;
 	ECardinalDirection GetRandomDirection() const;
-	// bool MapHasEmptyCellsLeft() const;
 
 };

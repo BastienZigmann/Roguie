@@ -14,7 +14,7 @@ UDungeonWorldBuilderComponent::UDungeonWorldBuilderComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
     EnableDebug();
-	EnableDebugTraces(); 
+	// EnableDebugTraces(); 
 }
 
 
@@ -40,9 +40,9 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
 
 	const FDungeonMap& DungeonMap = OwningActor->GetDungeonMap();
 
-	for ( int32 x = 0; x < DungeonMap.SizeX; x++)
+	for ( int32 x = 0; x < DungeonMap.NbCellsX; x++)
 	{
-		for (int32 y = 0; y < DungeonMap.SizeY; y++)
+		for (int32 y = 0; y < DungeonMap.NbCellsY; y++)
 		{
             FIntCoordinate CellCoord(x, y);
 			const FCell* Cell = DungeonMap.GetCell(CellCoord);
@@ -85,12 +85,7 @@ void UDungeonWorldBuilderComponent::BuildCell(const FIntCoordinate& CellCoord, c
             if (Cell->IsTilesInRoom(TileCoord))
             {
                 FTransform TileCenterTransform = GetCellPositionTransform(CellCoord) + GetTileOffset(TileCoord) + FTransform(FVector(TileSize / 2.0f, TileSize / 2.0f, 0.0f));
-                DebugLog(FString::Printf(TEXT("CellCoord: %s"), *CellCoord.ToString()), this);
-                DebugLog(FString::Printf(TEXT("TileCoord: %s"), *TileCoord.ToString()), this);
-                DebugLog(FString::Printf(TEXT("GetCellPositionTransform(%s)"), *GetCellPositionTransform(CellCoord).ToString()), this);
-                DebugLog(FString::Printf(TEXT("GetTileOffset(%s)"), *GetTileOffset(TileCoord).ToString()), this);
-                DebugLog(FString::Printf(TEXT("Offset(%f, %f, 0.0f)"), TileSize / 2.0f, TileSize / 2.0f), this);
-
+                DebugLog(FString::Printf(TEXT("Cell position %s Tile position %s"), *CellCoord.ToString(), *TileCoord.ToString()), this);
                 DebugLog("Spawning tile floor..", this);
                 DebugTraceRectangle(GetWorld(), TileCenterTransform.GetLocation(), TileCenterTransform.Rotator(), FVector(MapElementsDataAsset->TileSize, MapElementsDataAsset->TileSize, 50.0f), FColor::Yellow, 1.0f, 5.0f, true);
                 SpawnTileFloor(TileCenterTransform);
@@ -195,6 +190,16 @@ void UDungeonWorldBuilderComponent::SpawnTileWalls(FTransform TileCenterTransfor
         }
         SpawnMapElement(&(*Walls)[ChoosenAsset], WallTransform);
     }   
+}
+
+void UDungeonWorldBuilderComponent::SpawnCorridor()
+{
+    
+}
+
+void UDungeonWorldBuilderComponent::SpawnCorridorTile()
+{
+
 }
 
 void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, const FTransform& Transform)
