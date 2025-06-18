@@ -87,7 +87,7 @@ FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
 		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1);
 		previousCellCoord = currentCellCoord;
 		currentCellCoord = currentCellCoord.GetNeighbor(AvailableDirections[RandomDirection]);
-		DebugLog(FString::Printf(TEXT("Current cell is now %s"), *currentCellCoord.ToString()), this);
+		DebugLog(FString::Printf(TEXT("Walked to cell %s"), *currentCellCoord.ToString()), this);
 		
 		DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, currentCellCoord));
 		DungeonMap.AddCorridor(previousCellCoord, currentCellCoord);
@@ -126,7 +126,6 @@ void UDungeonGenerationComponent::ComputeCorridors(FDungeonMap& DungeonMap)
 {
 	for (FCorridor& Corridor : DungeonMap.Corridors)
 	{
-		DebugLog("Computing corridor: " + Corridor.ToString(), this);
 		if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell())
 		{
 			DebugLog("Invalid corridor, skipping", this);
@@ -140,7 +139,7 @@ void UDungeonGenerationComponent::ComputeCorridors(FDungeonMap& DungeonMap)
 
 ECardinalDirection UDungeonGenerationComponent::ComputeDirection(const FCorridor& Corridor) const
 {
-	FVector2D Displacement = Corridor.StartingTile.GetDisplacementVectorTo(Corridor.EndingTile);
+	FVector2D Displacement = Corridor.StartingCellCoord.GetDisplacementVectorTo(Corridor.EndingCellCoord);
 	if (FMath::Abs(Displacement.X) > FMath::Abs(Displacement.Y))
 	{
 		return Displacement.X > 0 ? ECardinalDirection::East : ECardinalDirection::West;
@@ -157,23 +156,23 @@ void UDungeonGenerationComponent::PickCorridorStartAndEndTile(const FDungeonMap&
 	int32 RandomIndex;
 	// Get potential tiles for the corridor's starting and ending positions
 	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetStartingCell(), Direction);
-	// if (PotentialTiles.Num() == 0)
-	// {
-	// 	DebugLog("No potential tiles found for corridor starting position", this);
-	// 	return; // No potential tiles found, cannot proceed
-	// }
+	if (PotentialTiles.Num() == 0)
+	{
+		DebugLog("No potential tiles found for corridor starting position", this);
+		return; // No potential tiles found, cannot proceed
+	}
 	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
-	Corridor.StartingTile = PotentialTiles[RandomIndex]; // HERE OUT OF BOUND
+	Corridor.SetStartingTile(PotentialTiles[RandomIndex]);
 
 	PotentialTiles.Empty(); // Clear potential tiles for the ending position
 	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetEndingCell(), GetOppositeDirection(Direction));
-	// if (PotentialTiles.Num() == 0)
-	// {
-	// 	DebugLog("No potential tiles found for corridor ending position", this);
-	// 	return; // No potential tiles found, cannot proceed
-	// }
+	if (PotentialTiles.Num() == 0)
+	{
+		DebugLog("No potential tiles found for corridor ending position", this);
+		return; // No potential tiles found, cannot proceed
+	}
 	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
-	Corridor.EndingTile = PotentialTiles[RandomIndex];
+	Corridor.SetEndingTile(PotentialTiles[RandomIndex]);
 
 }
 
@@ -182,6 +181,7 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 	// Loop over cell edges until we meet the first room tiles, get the whole line as potential candidate and pick one randomly
 	TArray<FIntCoordinate> PotentialTiles;
 	bool found = false;
+	FIntCoordinate CellBaseTile = Cell.BaseTileCoordinate; 
 	switch (Side)
 	{
 	case ECardinalDirection::North:
@@ -190,10 +190,10 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 		{
 			for (int x = 0; x < DungeonMap.NbTilesInCellsX; ++x)
 			{
-				if (Cell.IsTileInRoom(FIntCoordinate(x, y))) 
+				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
 				{
 					found = true;
-					PotentialTiles.Add(FIntCoordinate(x, y));
+					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
 				}
 			}
 			if (found)
@@ -205,10 +205,10 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 		{
 			for (int y = 0; y < DungeonMap.NbTilesInCellsY; ++y)
 			{
-				if (Cell.IsTileInRoom(FIntCoordinate(x, y))) 
+				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
 				{
 					found = true;
-					PotentialTiles.Add(FIntCoordinate(x, y));
+					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
 				}
 			}
 			if (found)
@@ -220,10 +220,10 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 		{
 			for (int x = 0; x < DungeonMap.NbTilesInCellsX; ++x)
 			{
-				if (Cell.IsTileInRoom(FIntCoordinate(x, y))) 
+				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
 				{
 					found = true;
-					PotentialTiles.Add(FIntCoordinate(x, y));
+					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
 				}
 			}
 			if (found)
@@ -235,10 +235,10 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 		{
 			for (int y = 0; y < DungeonMap.NbTilesInCellsY; ++y)
 			{
-				if (Cell.IsTileInRoom(FIntCoordinate(x, y))) 
+				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
 				{
 					found = true;
-					PotentialTiles.Add(FIntCoordinate(x, y));
+					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
 				}
 			}
 			if (found)
@@ -247,7 +247,7 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 		break;
 	
 	default:
-		UE_LOG(LogTemp, Error, TEXT("Invalid direction in PickCorridorStartAndEndTile"));
+		ErrorLog(TEXT("Invalid direction in PickCorridorStartAndEndTile"), this);
 		break;
 	} 
 	return PotentialTiles;
@@ -256,7 +256,6 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor)
 {
 	// This function is not implemented yet, but it should create the path for the corridor based on the starting and ending tiles
-	DebugLog("Creating corridor path from " + Corridor.StartingTile.ToString() + " to " + Corridor.EndingTile.ToString(), this);
 	FIntCoordinate CurrentTile = Corridor.StartingTile;
 	// We don't add this one to the corridor path, because it is one of the room tiles	
 	// TODO For now path is manhattan distance shaped for simple test
@@ -280,7 +279,6 @@ void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonM
 			CurrentTile.y--;
 		}
 		Corridor.AddPathTile(CurrentTile);
-		DebugLog("Corridor path tile: " + CurrentTile.ToString(), this);
 	}
 
 }

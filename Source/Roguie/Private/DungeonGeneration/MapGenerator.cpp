@@ -34,7 +34,9 @@ void AMapGenerator::BeginPlay()
 void AMapGenerator::CreateDungeonMap()
 {
 	DungeonMap = DungeonGenerationComponent->GenerateDungeonMap();
-	DungeonWorldBuilderComponent->BuildDungeon();
+	UE_LOG(LogTemp, Warning, TEXT("Dungeon map generated with %d cells."), DungeonMap.Cells.Num());
+	UE_LOG(LogTemp, Warning, TEXT("BuildDungeon Disabled"));
+	// DungeonWorldBuilderComponent->BuildDungeon();
 }
 
 

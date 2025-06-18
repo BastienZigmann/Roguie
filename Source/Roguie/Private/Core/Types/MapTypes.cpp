@@ -87,6 +87,7 @@ FCell::FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& 
     BaseTileCoordinate = InParentMap ? FIntCoordinate(InParentMap->NbTilesInCellsX * CellCoord.x, InParentMap->NbTilesInCellsY * CellCoord.y) : FIntCoordinate::ZeroCoord;
     IndexInCellsArray = InParentMap->GetCellIndex(CellCoord);
     IndexInTileArray = InParentMap->GetTileIndex(BaseTileCoordinate);
+    bIsActive = true;
 }
 
 FTile& FCell::GetBaseTile()
@@ -106,7 +107,6 @@ FTile& FCell::GetBaseTile()
 
 bool FCell::IsTileInRoom(const FIntCoordinate& Coord) const
 {
-    // TODO PAS BON, need to if the tile's in the rooms with global map tile's coordinates
     if (!ParentMap) return false; // If no parent map, cannot be in room
     if (!Room.ParentCell || Room.LengthX <= 0 || Room.LengthY <= 0)
     {
@@ -157,9 +157,18 @@ FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCe
 
     // Init all cells
     Cells.SetNum(TotalCells);
+    for (int32 i = 0; i < TotalCells; ++i)
+    {
+        FIntCoordinate CellCoord(i % NbCellsX, i / NbCellsX);
+        Cells[i] = FCell();
+    }
 
     int32 TotalTiles = TotalCells * NbTilesInCellsX * NbTilesInCellsY;
     Tiles.SetNum(TotalCells * NbTilesInCellsX * NbTilesInCellsY);
+    for (int32 i = 0; i < TotalTiles; ++i)
+    {
+        Tiles[i] = FTile();
+    }
     
     // Init flag bitarrays
     OccupiedCells.Init(false, TotalCells);
@@ -235,7 +244,7 @@ void FDungeonMap::FillCellTiles(const FIntCoordinate& CellCoord)
     }
 }
 
-void FDungeonMap::FillCorridorsTiles(const FCorridor& Corridor)
+void FDungeonMap::FillCorridorTiles(const FCorridor& Corridor)
 {
     if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell() || Corridor.PathTiles.Num() == 0)
     {
@@ -259,7 +268,8 @@ void FDungeonMap::FillMapTiles()
 {
     for (const FCell& Cell : Cells)
     {
-        if (OccupiedCells[Cell.IndexInCellsArray])
+        if (!Cell.IsValid()) continue;
+        if (Cell.IndexInCellsArray != -1 && OccupiedCells[Cell.IndexInCellsArray])
         {
             FillCellTiles(Cell.CellCoord);
         }
@@ -267,7 +277,7 @@ void FDungeonMap::FillMapTiles()
 
     for (const FCorridor& Corridor : Corridors)
     {
-        FillCorridorsTiles(Corridor);
+        FillCorridorTiles(Corridor);
     }
 }
 
@@ -320,6 +330,5 @@ void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCell, const FIntCoor
     if (StartingCell == EndingCell) return; // No corridor needed if start and end are the same
 
     FCorridor NewCorridor(this, StartingCell, EndingCell);
-
     Corridors.Add(NewCorridor);
 }

@@ -170,8 +170,8 @@ struct ROGUIE_API FCorridor
 	void AddPathTile(FIntCoordinate Tile);
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("Corridor from %s to %s with %d path tiles"), 
-			*StartingTile.ToString(), *EndingTile.ToString(), PathTiles.Num());
+		return FString::Printf(TEXT("Corridor from Cell %s to Cell %s, Tiles Values %s to %s with %d path tiles"), 
+			*StartingCellCoord.ToString(), *EndingCellCoord.ToString(), *StartingTile.ToString(), *EndingTile.ToString(), PathTiles.Num());
 	}
 
 };
@@ -239,17 +239,24 @@ struct ROGUIE_API FCell
 	FRoom Room; // Rooms in this cell
 	int32 IndexInCellsArray; // Index in FDungeon Cell array
 	int32 IndexInTileArray; // Index in FDungeon Tile array
+	bool bIsActive; // If the cell is active (has a room)
 
 	FCell()
 		: ParentMap(nullptr), CellCoord(FIntCoordinate::ZeroCoord), BaseTileCoordinate(FIntCoordinate::ZeroCoord),
-		  IndexInCellsArray(-1), IndexInTileArray(-1)
+		  IndexInCellsArray(-1), IndexInTileArray(-1), bIsActive(false)
 	{
 	}
 	FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& InRoom = FRoom());
 	FTile& GetBaseTile();
+	bool IsValid() const { return bIsActive; } // Normal room is empty
 	bool IsTileInRoom(const FIntCoordinate& Coord) const; // world tiles coordinates, not room based !
 	bool IsTileInRoom(const FTile& Tile) const; // world tiles coordinates, not room based !
 	const FCell& GetNeighbor(ECardinalDirection Direction) const;
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("Cell at %s with room of type %s, its index are : CellArray : %d and TileArray : %d, IsValid %d"), *CellCoord.ToString(), *UEnum::GetValueAsString(Room.RoomType), IndexInCellsArray, IndexInTileArray, IsValid());
+	}
 };
 
 USTRUCT()
@@ -320,7 +327,7 @@ struct ROGUIE_API FDungeonMap
 private:
 	// Not to call alone, will erase corridors
 	void FillCellTiles(const FIntCoordinate& CellCoord);
-	void FillCorridorsTiles(const FCorridor& Corridor);
+	void FillCorridorTiles(const FCorridor& Corridor);
 
 	// Get Tile Index in array
 	int32 GetTileIndex(const FTile& Tile) const
