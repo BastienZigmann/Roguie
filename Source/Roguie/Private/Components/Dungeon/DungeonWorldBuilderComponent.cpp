@@ -14,7 +14,7 @@ UDungeonWorldBuilderComponent::UDungeonWorldBuilderComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
     EnableDebug();
-	// EnableDebugTraces(); 
+	EnableDebugTraces(); 
 }
 
 
@@ -30,7 +30,7 @@ void UDungeonWorldBuilderComponent::BeginPlay()
 		ErrorLog("No MapElementsDataAsset found in OwningActor", this);
 		return; // No data asset found
 	}
-    RandomStream.Initialize(MapElementsDataAsset->Seed);
+    RandomStream.Initialize(OwningActor->GetMapSeed());
 	DebugTraces();
 }
 
@@ -40,68 +40,66 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
 
 	const FDungeonMap& DungeonMap = OwningActor->GetDungeonMap();
 
-	for ( int32 x = 0; x < DungeonMap.NbCellsX; x++)
+	for (int32 x = 0; x < DungeonMap.Tiles.Num(); x++)
 	{
-		for (int32 y = 0; y < DungeonMap.NbCellsY; y++)
-		{
-            FIntCoordinate CellCoord(x, y);
-			const FCell* Cell = DungeonMap.GetCell(CellCoord);
-			DebugLog(FString::Printf(TEXT("Processing cell at %s"), *CellCoord.ToString()), this);
-			if (!Cell)
-			{
-				DebugLog(FString::Printf(TEXT("Invalid cell at %s"), *CellCoord.ToString()), this);
-				continue; // Skip invalid cells
-			}
-			BuildCell(CellCoord, Cell);
-		}
+        const FTile& DungeonMapTile = DungeonMap.Tiles[x];
+        switch (DungeonMapTile.Type)
+        {
+        case FTileType::Empty:
+            // Skip empty tiles
+            continue;
+        case FTileType::Room:
+            // Code to build room
+            SpawnTileFloor(GetTileOffset(DungeonMapTile.TileCoord));
+            break;
+        
+        case FTileType::Corridor:
+            // Code to build corridor
+            SpawnCorridorTile(GetTileOffset(DungeonMapTile.TileCoord));
+            break;
+
+
+        default:
+            break;
+        }
+        
+        
 	}
-}
 
-// Build cell shape, room, corridor, doors..etc
-void UDungeonWorldBuilderComponent::BuildCell(const FIntCoordinate& CellCoord, const FCell* Cell)
-{
-    if (!Cell) return;
-    float CellNumberOfTilesX = MapElementsDataAsset->CellNumberOfTilesX;
-    float CellNumberOfTilesY = MapElementsDataAsset->CellNumberOfTilesY;
-    float TileSize = MapElementsDataAsset->TileSize;
-
+    // Debug
     if (IsDebugTracesOn())
     {
-        FTransform CellTransform = GetCellPositionTransform(CellCoord);
-        DebugTraceSphere(GetWorld(), CellTransform.GetLocation(), 50.0f, CellCoord == FIntCoordinate::ZeroCoord ? FColor::Green : FColor::Red, 1.0f, 5.0f, true); // Debug Trace Center of the cell
-        FTransform CellCenterTransform = FTransform(
-            CellTransform.GetRotation(),
-            CellTransform.GetLocation() + FVector(CellNumberOfTilesX * TileSize / 2.0f, CellNumberOfTilesY * TileSize / 2.0f, 0.0f),
-            CellTransform.GetScale3D()
-        );
-        DebugTraceRectangle(GetWorld(), CellCenterTransform.GetLocation(), CellTransform.Rotator(), FVector(CellNumberOfTilesX * TileSize, CellNumberOfTilesY * TileSize, 50.0f), FColor::Blue, 1.0f, 5.0f, true);
-    }   
-
-    for (int32 x = 0; x < CellNumberOfTilesX; x++)
-    {
-        for (int32 y = 0; y < CellNumberOfTilesY; y++)
+        for (const FCell& Cell : DungeonMap.Cells)
         {
-            FIntCoordinate TileCoord(x, y);
-            if (Cell->IsTileInRoom(TileCoord))
+            if (!Cell.IsValid())
             {
-                FTransform TileCenterTransform = GetCellPositionTransform(CellCoord) + GetTileOffset(TileCoord) + FTransform(FVector(TileSize / 2.0f, TileSize / 2.0f, 0.0f));
-                DebugLog(FString::Printf(TEXT("Cell position %s Tile position %s"), *CellCoord.ToString(), *TileCoord.ToString()), this);
-                DebugLog("Spawning tile floor..", this);
-                DebugTraceRectangle(GetWorld(), TileCenterTransform.GetLocation(), TileCenterTransform.Rotator(), FVector(MapElementsDataAsset->TileSize, MapElementsDataAsset->TileSize, 50.0f), FColor::Yellow, 1.0f, 5.0f, true);
-                SpawnTileFloor(TileCenterTransform);
-
-                DebugLog(FString::Printf(TEXT("Spawning tile walls..")), this);
-                TArray<ECardinalDirection> Directions;
-                if (!Cell->IsTileInRoom(TileCoord.GetNorthNeighbor())) Directions.Add(ECardinalDirection::North);
-                if (!Cell->IsTileInRoom(TileCoord.GetEastNeighbor())) Directions.Add(ECardinalDirection::East);
-                if (!Cell->IsTileInRoom(TileCoord.GetSouthNeighbor())) Directions.Add(ECardinalDirection::South);
-                if (!Cell->IsTileInRoom(TileCoord.GetWestNeighbor())) Directions.Add(ECardinalDirection::West);
-                SpawnTileWalls(TileCenterTransform, Directions);
+                continue; // Skip invalid cells
             }
-
+            
+            FTransform transform = GetTileOffset(Cell.BaseTileCoordinate);
+            FColor color = FColor::Yellow;
+            if (Cell.CellCoord == FIntCoordinate(MapElementsDataAsset->MapWidth / 2, MapElementsDataAsset->MapHeight / 2))
+                color = FColor::Emerald;
+            if (Cell.CellCoord == FIntCoordinate(0, 0))
+                color = FColor::Purple;
+            DebugTraceRectangle(GetWorld(), transform.GetLocation() + FVector(0,0,10), transform.GetRotation().Rotator(),
+                FVector(MapElementsDataAsset->TileSize, MapElementsDataAsset->TileSize, 0.0f),
+                color, 1.0f, 5.0f, true);
+        }
+        for (const FCorridor& Corridor : DungeonMap.Corridors)
+        {
+            DebugLog("Tracing Corridor: " + Corridor.ToString(), this);
+            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.StartingTile).GetLocation() + FVector(0,0,10), GetTileOffset(Corridor.StartingTile).GetRotation().Rotator(),
+                FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Green, 1.0f, 5.0f, true);
+            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.EndingTile).GetLocation() + FVector(0,0,20), GetTileOffset(Corridor.EndingTile).GetRotation().Rotator(),
+                FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Red, 1.0f, 5.0f, true);
+            for (const FIntCoordinate& PathTile : Corridor.PathTiles)
+            {
+                DebugTraceRectangle(GetWorld(), GetTileOffset(PathTile).GetLocation() + FVector(0,0,10), GetTileOffset(PathTile).GetRotation().Rotator(),
+                    FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Blue, 1.0f, 5.0f, true);
+            }
         }
     }
-
 }
 
 // --- Positions functions
@@ -115,22 +113,6 @@ FTransform UDungeonWorldBuilderComponent::GetTileOffset(const FIntCoordinate& Ti
         (TileCoord * MapElementsDataAsset->TileSize).ToFVector(), // Position based on tile size
         FVector::OneVector // Default scale
     );
-}
-
-FTransform UDungeonWorldBuilderComponent::GetCellPositionTransform(const FIntCoordinate& CellCoord)
-{
-	const int32 CellNumberOfTilesX = MapElementsDataAsset->CellNumberOfTilesX;
-	const int32 CellNumberOfTilesY = MapElementsDataAsset->CellNumberOfTilesY;
-
-	float TileSize = MapElementsDataAsset->TileSize;
-
-    FFloatCoordinate CellPosition = FFloatCoordinate((CellCoord.x * CellNumberOfTilesX) * TileSize, (CellCoord.y * CellNumberOfTilesY) * TileSize);
-
-	return FTransform(
-		FQuat::Identity, // No rotation
-		CellPosition.ToFVector(), // Position based on cell size
-		FVector::OneVector // Default scale
-	);
 }
 
 // --- Spawning Functions
@@ -197,14 +179,13 @@ void UDungeonWorldBuilderComponent::SpawnCorridor()
     
 }
 
-void UDungeonWorldBuilderComponent::SpawnCorridorTile()
+void UDungeonWorldBuilderComponent::SpawnCorridorTile(FTransform TileTransform)
 {
-
 }
 
 void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, const FTransform& Transform)
 {
-    DebugLog("Spawning map element at " + Transform.GetLocation().ToString(), this);
+    //DebugLog("Spawning map element at " + Transform.GetLocation().ToString(), this);
     if (!Element || ! GetWorld())
     {
         ErrorLog("Invalid world or map element provided for spawning", this);
@@ -221,7 +202,7 @@ void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, 
         }
         else
         {
-            DebugLog(FString::Printf(TEXT("Successfully spawned BP actor: %s"), *SpawnedActor->GetName()), this);
+            //DebugLog(FString::Printf(TEXT("Successfully spawned BP actor: %s"), *SpawnedActor->GetName()), this);
         }
     }
     // Otherwise use a static mesh
@@ -236,7 +217,7 @@ void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, 
         }
         else
         {
-            DebugLog("Successfully spawned static mesh actor: " + MeshActor->GetName(), this);
+            //DebugLog("Successfully spawned static mesh actor: " + MeshActor->GetName(), this);
         }
         UStaticMeshComponent* MeshComponent = MeshActor->GetStaticMeshComponent();
         MeshComponent->SetStaticMesh(Element->StaticMesh);

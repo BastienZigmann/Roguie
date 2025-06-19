@@ -14,6 +14,7 @@ AMapGenerator::AMapGenerator()
 
 	DungeonGenerationComponent = CreateDefaultSubobject<UDungeonGenerationComponent>(TEXT("DungeonGenerationComponent"));
 	DungeonWorldBuilderComponent = CreateDefaultSubobject<UDungeonWorldBuilderComponent>(TEXT("DungeonWorldBuilderComponent"));
+	EnableDebug();
 }
 
 // Called when the game starts or when spawned
@@ -23,10 +24,16 @@ void AMapGenerator::BeginPlay()
 
 	if (!MapElementsDataAsset)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MapElementsDataAsset is not set in AMapGenerator!"));
+		ErrorLog(TEXT("MapElementsDataAsset is not set in AMapGenerator!"), this);
 		return;
 	}
-	
+
+	if (!MapElementsDataAsset->bLockSeed)
+	{
+		MapElementsDataAsset->Seed = GetDynamicSeed();
+		DebugLog("Using dynamic seed: " + FString::FromInt(MapElementsDataAsset->Seed), this);
+	}
+
 	CreateDungeonMap();
 }
 
@@ -34,9 +41,21 @@ void AMapGenerator::BeginPlay()
 void AMapGenerator::CreateDungeonMap()
 {
 	DungeonMap = DungeonGenerationComponent->GenerateDungeonMap();
-	UE_LOG(LogTemp, Warning, TEXT("Dungeon map generated with %d cells."), DungeonMap.Cells.Num());
-	UE_LOG(LogTemp, Warning, TEXT("BuildDungeon Disabled"));
-	// DungeonWorldBuilderComponent->BuildDungeon();
+	DebugLog("Dungeon map generated with " + FString::FromInt(DungeonMap.Cells.Num()) + " cells.", this);
+	DungeonWorldBuilderComponent->BuildDungeon();
 }
 
 
+int32 AMapGenerator::GetDynamicSeed()
+{
+    FDateTime Now = FDateTime::UtcNow();
+    double UniqueFactor = FMath::Frac(FPlatformTime::Seconds()) * 1000000.0;
+    
+    // Combine date components with milliseconds and a unique factor
+    FString TimeString = FString::Printf(TEXT("%d%d%d%d%d%.0f"), 
+        Now.GetYear(), Now.GetMonth(), Now.GetDay(),
+        Now.GetHour(), Now.GetMinute(), UniqueFactor);
+    
+    // Hash the string to get a good distribution
+    return GetTypeHash(TimeString);
+}

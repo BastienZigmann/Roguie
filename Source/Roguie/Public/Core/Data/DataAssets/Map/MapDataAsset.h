@@ -37,6 +37,8 @@ public:
 	float TileSize = 400.0f; 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	bool bLockSeed = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
 	int32 Seed = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")

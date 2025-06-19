@@ -40,11 +40,10 @@ private:
 	void BuildCell(const FIntCoordinate& CellCoord, const FCell* Cell);
 
 	FTransform GetTileOffset(const FIntCoordinate& TileCoord);
-	FTransform GetCellPositionTransform(const FIntCoordinate& CellCoord);
 	
 	void SpawnTileFloor(FTransform TileTransform);
 	void SpawnTileWalls(FTransform TileTransform,  const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
 	void SpawnCorridor();
-	void SpawnCorridorTile();
+	void SpawnCorridorTile(FTransform TileTransform);
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
 };

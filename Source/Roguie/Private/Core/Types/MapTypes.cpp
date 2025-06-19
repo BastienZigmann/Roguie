@@ -31,6 +31,7 @@ FCorridor::FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoord
     }
     StartingTile = FIntCoordinate::ZeroCoord;
     EndingTile = FIntCoordinate::ZeroCoord;
+    GeneralDirection = StartingCellCoord.GetDirectionTo(EndingCellCoord);
 }
 
 const FCell* FCorridor::GetStartingCell() const
@@ -71,6 +72,23 @@ void FCorridor::AddPathTile(FIntCoordinate Tile)
     PathTiles.Add(Tile);
 }
 
+// **************************************
+// ************ Tiles *******************
+// **************************************
+FTile::FTile() : ParentMap(nullptr), TileCoord(FIntCoordinate::ZeroCoord), IndexInTilesArray(-1), Type(FTileType::Empty)
+{
+    // Default constructor initializes to empty tile
+}
+
+FTile::FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileType InType) : ParentMap(InParentMap), TileCoord(InTileCoord), Type(InType) 
+{
+    if (!ParentMap)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FTile::FTile: Parent map is null."));
+        return; // Handle uninitialized parent map
+    }
+    IndexInTilesArray = ParentMap->GetTileIndex(TileCoord);
+}
 
 // **************************************
 // ************ FCell *******************
@@ -131,7 +149,7 @@ bool FCell::IsTileInRoom(const FIntCoordinate& Coord) const
 
 bool FCell::IsTileInRoom(const FTile& Tile) const
 {
-    return IsTileInRoom(Tile.Position);
+    return IsTileInRoom(Tile.TileCoord);
 }
 
 const FCell& FCell::GetNeighbor(ECardinalDirection Direction) const
@@ -164,10 +182,11 @@ FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCe
     }
 
     int32 TotalTiles = TotalCells * NbTilesInCellsX * NbTilesInCellsY;
-    Tiles.SetNum(TotalCells * NbTilesInCellsX * NbTilesInCellsY);
+    Tiles.SetNum(TotalTiles);
+    UE_LOG(LogTemp, Warning, TEXT("FDungeonMap: Initializing %d tiles"), TotalTiles, TotalCells);
     for (int32 i = 0; i < TotalTiles; ++i)
     {
-        Tiles[i] = FTile();
+        Tiles[i] = FTile(this, GetTileCoordinates(i), FTileType::Empty);
     }
     
     // Init flag bitarrays
@@ -227,18 +246,23 @@ void FDungeonMap::BanCell(const FIntCoordinate& CellCoord)
 }
 
 // Not to call alone, will erase corridors
-void FDungeonMap::FillCellTiles(const FIntCoordinate& CellCoord)
+void FDungeonMap::FillCellTiles(const FCell& Cell)
 {
-    for (int32 i = 0; i < NbTilesInCellsX * NbCellsX; ++i)
+    for (int32 i = 0; i < NbTilesInCellsX; ++i)
     {
-        for (int32 j = 0; j < NbTilesInCellsY * NbCellsY; ++j)
+        for (int32 j = 0; j < NbTilesInCellsY; ++j)
         {
             FIntCoordinate TileCoord(i, j);
-            int32 TileIndex = GetTileIndex(FTile(TileCoord, FTileType::Room));
+            TileCoord = TileCoord + Cell.BaseTileCoordinate; // Adjust to the cell's base tile coordinate
+            int32 TileIndex = GetTileIndex(TileCoord);
             if (TileIndex >= 0 && TileIndex < Tiles.Num())
             {
-                Tiles[TileIndex].Type = FTileType::Room;
-                Tiles[TileIndex].Position = TileCoord;
+                FTile newTile = FTile(this, TileCoord, FTileType::Empty);
+                if (Cell.IsTileInRoom(TileCoord))
+                {
+                    newTile.Type = FTileType::Room;
+                }
+                Tiles[TileIndex] = newTile;
             }
         }
     }
@@ -257,8 +281,8 @@ void FDungeonMap::FillCorridorTiles(const FCorridor& Corridor)
         int32 TileIndex = GetTileIndex(PathTile);
         if (TileIndex >= 0 && TileIndex < Tiles.Num())
         {
-            Tiles[TileIndex].Type = FTileType::Corridor;
-            Tiles[TileIndex].Position = PathTile;
+            FTile newTile = FTile(this, PathTile, FTileType::Corridor);
+            Tiles[TileIndex] = newTile;
         }
     }   
 }
@@ -271,7 +295,7 @@ void FDungeonMap::FillMapTiles()
         if (!Cell.IsValid()) continue;
         if (Cell.IndexInCellsArray != -1 && OccupiedCells[Cell.IndexInCellsArray])
         {
-            FillCellTiles(Cell.CellCoord);
+            FillCellTiles(Cell);
         }
     }
 
@@ -283,14 +307,14 @@ void FDungeonMap::FillMapTiles()
 
 FCell* FDungeonMap::GetCellFromTile(FTile Tile)
 {
-    if (Tile.Position.x < 0 || Tile.Position.x >= NbCellsX * NbTilesInCellsX ||
-        Tile.Position.y < 0 || Tile.Position.y >= NbCellsY * NbTilesInCellsY)
+    if (Tile.TileCoord.x < 0 || Tile.TileCoord.x >= NbCellsX * NbTilesInCellsX ||
+        Tile.TileCoord.y < 0 || Tile.TileCoord.y >= NbCellsY * NbTilesInCellsY)
         {
-            UE_LOG(LogTemp, Error, TEXT("GetTileCell: Invalid tile position %s"), *Tile.Position.ToString());
+            UE_LOG(LogTemp, Error, TEXT("GetTileCell: Invalid tile position %s"), *Tile.TileCoord.ToString());
             return nullptr; // Handle invalid tile position
         }
-        
-        FIntCoordinate CellCoord(Tile.Position.x / NbTilesInCellsX, Tile.Position.y / NbTilesInCellsY);
+
+        FIntCoordinate CellCoord(Tile.TileCoord.x / NbTilesInCellsX, Tile.TileCoord.y / NbTilesInCellsY);
         return GetCellByCoordinates(CellCoord);
 }
 
@@ -312,8 +336,8 @@ TArray<ECardinalDirection> FDungeonMap::GetAvailableDirections(const FIntCoordin
 FIntCoordinate FDungeonMap::GetTileWorldPosition(const FTile& Tile) const
 {
 	return FIntCoordinate(
-		Tile.Position.x * NbTilesInCellsX + NbTilesInCellsX / 2,
-		Tile.Position.y * NbTilesInCellsY + NbTilesInCellsY / 2
+		Tile.TileCoord.x * NbTilesInCellsX + NbTilesInCellsX / 2,
+		Tile.TileCoord.y * NbTilesInCellsY + NbTilesInCellsY / 2
 	);
 }
 

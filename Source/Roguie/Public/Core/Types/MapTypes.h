@@ -43,6 +43,7 @@ struct ROGUIE_API TCoordinate
 	bool operator==(const TCoordinate& Other) const { return x == Other.x && y == Other.y; }
 	bool operator!=(const TCoordinate& Other) const { return !(*this == Other); }
 	TCoordinate operator+(const TCoordinate& Other) const { return TCoordinate(x + Other.x, y + Other.y); }
+	TCoordinate operator+(float Scalar) const { return TCoordinate(x + Scalar, y + Scalar); }
 	TCoordinate operator-(const TCoordinate& Other) const { return TCoordinate(x - Other.x, y - Other.y); }
 	TCoordinate operator*(int Scalar) const { return TCoordinate(x * Scalar, y * Scalar); }
 	TCoordinate operator/(int Scalar) const
@@ -84,6 +85,14 @@ struct ROGUIE_API TCoordinate
 				UE_LOG(LogTemp, Error, TEXT("Invalid direction in TCoordinate::GetNeighbor"));
 				return *this; // Return self if invalid direction
 		}
+	}
+	ECardinalDirection GetDirectionTo(const TCoordinate& Other) const
+	{
+		FVector2D Displacement = GetDisplacementVectorTo(Other);
+		if (FMath::Abs(Displacement.X) > FMath::Abs(Displacement.Y))
+			return Displacement.X > 0 ? ECardinalDirection::East : ECardinalDirection::West;
+		else
+			return Displacement.Y > 0 ? ECardinalDirection::South : ECardinalDirection::North;
 	}
 
 	T ManhattanDistance(const TCoordinate& Other) const { return FMath::Abs(x - Other.x) + FMath::Abs(y - Other.y); }
@@ -154,6 +163,7 @@ struct ROGUIE_API FCorridor
 	GENERATED_BODY()
 
 	FDungeonMap* ParentMap; // Pointer to the map this corridor belongs to
+	ECardinalDirection GeneralDirection; // Direction of the corridor
 	FIntCoordinate StartingCellCoord; // Cells where corridor starts IN THE MAP
 	FIntCoordinate EndingCellCoord; // Cells where corridor ends IN THE MAP
 	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE MAP
@@ -190,11 +200,13 @@ struct ROGUIE_API FTile
 {
 	GENERATED_BODY()
 
-	FIntCoordinate Position; // Position of the tile in the Map (index)
+	FDungeonMap* ParentMap; // Pointer to the map this tile belongs to
+	FIntCoordinate TileCoord; // Position of the tile in the Map
+	int32 IndexInTilesArray; // Index in FDungeon Tile array
 	FTileType Type; // Type of the tile (Floor, Corridor, etc.)	
 
-	FTile() : FTile(FIntCoordinate::ZeroCoord, FTileType::Empty) { }
-	FTile(const FIntCoordinate& InPosition, FTileType InType) : Position(InPosition), Type(InType) { }
+	FTile();
+	FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileType InType);
 };
 	
 UENUM()
@@ -275,7 +287,15 @@ struct ROGUIE_API FDungeonMap
 	TBitArray<> OccupiedCells; // Cells with rooms
 	TBitArray<> BannedCells; // Cells forbidden
 
-	FDungeonMap() : FDungeonMap(5, 5) { }
+	FDungeonMap() 
+	{
+		NbCellsX = 0;
+		NbCellsY = 0;
+		NbTilesInCellsX = 5; // Default tile size in cells
+		NbTilesInCellsY = 5; // Default tile size in cells
+		OccupiedCells.Init(false, NbCellsX * NbCellsY);
+		BannedCells.Init(false, NbCellsX * NbCellsY);
+	}
 	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5);
 
 	void SetCell(FCell Cell);
@@ -326,13 +346,20 @@ struct ROGUIE_API FDungeonMap
 
 private:
 	// Not to call alone, will erase corridors
-	void FillCellTiles(const FIntCoordinate& CellCoord);
+	void FillCellTiles(const FCell& Cell);
 	void FillCorridorTiles(const FCorridor& Corridor);
 
 	// Get Tile Index in array
 	int32 GetTileIndex(const FTile& Tile) const
 	{
-		return GetTileIndex(Tile.Position);
+		return GetTileIndex(Tile.TileCoord);
+	}
+
+	const FIntCoordinate GetTileCoordinates(int32 Index) const
+	{
+		int32 TileX = Index % (NbCellsX * NbTilesInCellsX);
+		int32 TileY = Index / (NbCellsX * NbTilesInCellsX);
+		return FIntCoordinate(TileX, TileY);
 	}
 
 	const FCell* GetConstCellByCoordinates(const FIntCoordinate& Coord) const

@@ -31,12 +31,12 @@ protected:
 
 private:
 
-	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord);
-	FRoom CreateRandomizedRoom();
+	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord,ERoomType RoomType = ERoomType::Normal);
+	FRoom CreateRandomizedRoom(const int32 ForcedSizeX = 0, const int32 ForcedSizeY = 0);
 	
 	void ComputeCorridors(FDungeonMap& DungeonMap);
-	ECardinalDirection ComputeDirection(const FCorridor& Corridor) const;
-	void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor, const ECardinalDirection Direction) const;
+	ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
+	void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor) const;
 	TArray<FIntCoordinate> GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const ;
 	void CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor);
 
