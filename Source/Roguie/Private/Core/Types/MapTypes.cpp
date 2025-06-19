@@ -90,6 +90,99 @@ FTile::FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileT
     IndexInTilesArray = ParentMap->GetTileIndex(TileCoord);
 }
 
+// ***************************************
+// ************ Rooms ********************
+// ***************************************
+bool FRoom::IsAdjacentTo(const FRoom& Other) const
+{
+    // Get Direction, and check rooms boundaries to be along the edge.
+    // If it is, check overlapping coordinates.
+    if (!ParentCell || !Other.ParentCell)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Parent cells are not set."));
+        return false; // Handle uninitialized parent cells
+    }
+
+    // If rooms are in the same cell, they can't be adjacent in the way we define adjacency
+    if (ParentCell->CellCoord == Other.ParentCell->CellCoord)
+    {
+        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Both rooms are in the same cell [%d,%d], which is invalid."), 
+            ParentCell->CellCoord.x, ParentCell->CellCoord.y);
+        return false;
+    }
+
+    ECardinalDirection Direction = ParentCell->CellCoord.GetDirectionTo(Other.ParentCell->CellCoord);
+    if (ParentCell->CellCoord.GetManhattanDistance(Other.ParentCell->CellCoord) != 1)
+    {
+        // Cells must be immediate neighbors
+        return false;
+    }
+    // Calculate global tile coordinates for both rooms
+    int32 CellSizeX = ParentCell->ParentMap->NbTilesInCellsX;
+    int32 CellSizeY = ParentCell->ParentMap->NbTilesInCellsY;
+    
+    // Get room boundaries in global tile coordinates
+    FIntCoordinate ThisRoomStart = Position + ParentCell->BaseTileCoordinate;
+    FIntCoordinate ThisRoomEnd = ThisRoomStart + FIntCoordinate(LengthX, LengthY);
+    
+    FIntCoordinate OtherRoomStart = Other.Position + Other.ParentCell->BaseTileCoordinate;
+    FIntCoordinate OtherRoomEnd = OtherRoomStart + FIntCoordinate(Other.LengthX, Other.LengthY);
+    
+    // Debug output to help identify issues
+    UE_LOG(LogTemp, Verbose, TEXT("IsAdjacentTo: Room1 [%d,%d]-[%d,%d] Room2 [%d,%d]-[%d,%d] Direction: %s"),
+        ThisRoomStart.x, ThisRoomStart.y, ThisRoomEnd.x, ThisRoomEnd.y,
+        OtherRoomStart.x, OtherRoomStart.y, OtherRoomEnd.x, OtherRoomEnd.y,
+        *UEnum::GetValueAsString(Direction));
+    
+    // Check for adjacency based on direction
+    switch (Direction)
+    {
+        case ECardinalDirection::North:
+            // This room is below Other room, check vertical adjacency and horizontal overlap
+            if (ThisRoomStart.y == OtherRoomEnd.y &&  // Vertical adjacency
+                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("Rooms are adjacent on North side"));
+                return true;
+            }
+            break;
+            
+        case ECardinalDirection::East:
+            // This room is left of Other room, check horizontal adjacency and vertical overlap
+            if (ThisRoomEnd.x == OtherRoomStart.x &&  // Horizontal adjacency
+                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("Rooms are adjacent on East side"));
+                return true;
+            }
+            break;
+            
+        case ECardinalDirection::South:
+            // This room is above Other room, check vertical adjacency and horizontal overlap
+            if (ThisRoomEnd.y == OtherRoomStart.y &&  // Vertical adjacency
+                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("Rooms are adjacent on South side"));
+                return true;
+            }
+            break;
+            
+        case ECardinalDirection::West:
+            // This room is right of Other room, check horizontal adjacency and vertical overlap
+            if (ThisRoomStart.x == OtherRoomEnd.x &&  // Horizontal adjacency
+                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
+            {
+                UE_LOG(LogTemp, Verbose, TEXT("Rooms are adjacent on West side"));
+                return true;
+            }
+            break;
+    }
+    
+    // If we get here, the rooms are not adjacent
+    return false;
+}
+
+
 // **************************************
 // ************ FCell *******************
 // **************************************
@@ -160,6 +253,11 @@ const FCell& FCell::GetNeighbor(ECardinalDirection Direction) const
     return *ParentMap->GetCell(NeighborCoord);
 }
 
+bool FCell::IsNeighbor(const FCell& Other) const
+{
+    return CellCoord.GetManhattanDistance(Other.CellCoord) == 1;
+}
+
 // **************************************
 // ************ FDungeonMap *************
 // **************************************
@@ -194,7 +292,7 @@ FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCe
     BannedCells.Init(false, TotalCells);
 }
 
-void FDungeonMap::SetCell(FCell Cell) 
+void FDungeonMap::SetCell(const FCell& Cell) 
 {
     int32 index = GetCellIndex(Cell.CellCoord);
     if (index < 0 || index >= Cells.Num())
@@ -210,6 +308,7 @@ void FDungeonMap::SetCell(FCell Cell)
     OccupiedCells[index] = true;
     BannedCells[index] = false;
     Cells[index] = Cell; 
+    Cells[index].Room.SetParentCell(&Cells[index]); // Set the parent cell for the room
 }
 
 FCell* FDungeonMap::GetCell(const FIntCoordinate& Coord)
@@ -349,10 +448,16 @@ FColor FDungeonMap::GetDebugColor(const FCell& Cell) const
     return FColor::Black;
 }
 
-void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell)
+void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord)
 {
-    if (StartingCell == EndingCell) return; // No corridor needed if start and end are the same
+    if (StartingCellCoord == EndingCellCoord) return; // No corridor needed if start and end are the same
+    // check if rooms are actually against each other
+    UE_LOG(LogTemp, Warning, TEXT("AddCorridor: Adding corridor from Cell %s to Cell %s"), *StartingCellCoord.ToString(), *EndingCellCoord.ToString());
+    UE_LOG(LogTemp, Warning, TEXT("AddCorridor: Adding corridor from cell %s to cell %s (line 2)."), 
+            *GetCell(StartingCellCoord)->Room.ParentCell->CellCoord.ToString(), *GetCell(EndingCellCoord)->Room.ParentCell->CellCoord.ToString());
+    if (GetCell(StartingCellCoord)->Room.IsAdjacentTo(GetCell(EndingCellCoord)->Room) ) return;   
+    
 
-    FCorridor NewCorridor(this, StartingCell, EndingCell);
+    FCorridor NewCorridor(this, StartingCellCoord, EndingCellCoord);
     Corridors.Add(NewCorridor);
 }

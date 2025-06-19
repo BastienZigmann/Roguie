@@ -13,7 +13,7 @@ UDungeonWorldBuilderComponent::UDungeonWorldBuilderComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-    EnableDebug();
+    //EnableDebug();
 	EnableDebugTraces(); 
 }
 
@@ -89,7 +89,7 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
         for (const FCorridor& Corridor : DungeonMap.Corridors)
         {
             DebugLog("Tracing Corridor: " + Corridor.ToString(), this);
-            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.StartingTile).GetLocation() + FVector(0,0,10), GetTileOffset(Corridor.StartingTile).GetRotation().Rotator(),
+            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.StartingTile).GetLocation() + FVector(0,0,15), GetTileOffset(Corridor.StartingTile).GetRotation().Rotator(),
                 FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Green, 1.0f, 5.0f, true);
             DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.EndingTile).GetLocation() + FVector(0,0,20), GetTileOffset(Corridor.EndingTile).GetRotation().Rotator(),
                 FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Red, 1.0f, 5.0f, true);

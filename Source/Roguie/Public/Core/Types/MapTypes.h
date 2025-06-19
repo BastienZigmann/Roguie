@@ -95,14 +95,14 @@ struct ROGUIE_API TCoordinate
 			return Displacement.Y > 0 ? ECardinalDirection::South : ECardinalDirection::North;
 	}
 
-	T ManhattanDistance(const TCoordinate& Other) const { return FMath::Abs(x - Other.x) + FMath::Abs(y - Other.y); }
-	auto SquaredDistance(const TCoordinate& Other) const 
+	T GetManhattanDistance(const TCoordinate& Other) const { return FMath::Abs(x - Other.x) + FMath::Abs(y - Other.y); }
+	auto GetSquaredDistance(const TCoordinate& Other) const 
 	{ 
 		auto dx = x - Other.x;
 		auto dy = y - Other.y;
 		return dx * dx + dy * dy; // Return squared distance to avoid floating point operations	
 	}	
-	float Distance(const TCoordinate& Other) const { return FMath::Sqrt(static_cast<float>(SquaredDistance(Other))); }
+	float GetDistance(const TCoordinate& Other) const { return FMath::Sqrt(static_cast<float>(SquaredDistance(Other))); }
 	FVector2D GetDisplacementVectorTo(const TCoordinate& Other) const { return FVector2D(Other.x - x, Other.y - y); }
 	FVector2D GetDisplacementVectorFrom(const TCoordinate& Other) const { return FVector2D(x - Other.x, y - Other.y); }
 
@@ -238,6 +238,8 @@ struct ROGUIE_API FRoom
 	void SetParentCell(FCell* InParentCell) { ParentCell = InParentCell; }
 	void SetType(ERoomType InRoomType) { RoomType = InRoomType; }
 
+	bool IsAdjacentTo(const FRoom& Other) const;
+
 };
 
 USTRUCT()
@@ -264,6 +266,7 @@ struct ROGUIE_API FCell
 	bool IsTileInRoom(const FIntCoordinate& Coord) const; // world tiles coordinates, not room based !
 	bool IsTileInRoom(const FTile& Tile) const; // world tiles coordinates, not room based !
 	const FCell& GetNeighbor(ECardinalDirection Direction) const;
+	bool IsNeighbor(const FCell& Other) const; // Check if the other cell is a neighbor in the map
 
 	FString ToString() const
 	{
@@ -298,7 +301,7 @@ struct ROGUIE_API FDungeonMap
 	}
 	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5);
 
-	void SetCell(FCell Cell);
+	void SetCell(const FCell& Cell);
 	FCell* GetCell(const FIntCoordinate& Coord);
 	const FCell* GetCell(const FIntCoordinate& Coord) const;
 	void BanCell(const FIntCoordinate& CellCoord);
@@ -342,7 +345,7 @@ struct ROGUIE_API FDungeonMap
 	}
 
 	// Corridor management
-	void AddCorridor(const FIntCoordinate& StartingCell, const FIntCoordinate& EndingCell);
+	void AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord);
 
 private:
 	// Not to call alone, will erase corridors

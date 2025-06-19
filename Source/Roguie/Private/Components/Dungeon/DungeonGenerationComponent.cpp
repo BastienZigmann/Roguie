@@ -85,11 +85,11 @@ FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
 			DebugLog("Backtracking to cell " + currentCellCoord.ToString(), this);
 			continue;
 		}
-		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1);
+		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1); // Get a random direction from the available directions
 		previousCellCoord = currentCellCoord;
 		currentCellCoord = currentCellCoord.GetNeighbor(AvailableDirections[RandomDirection]);
-		DebugLog(FString::Printf(TEXT("Walked to cell %s"), *currentCellCoord.ToString()), this);
-		
+		DebugLog(FString::Printf(TEXT("Walked to cell %s, from cell %s"), *currentCellCoord.ToString(), *previousCellCoord.ToString()), this);
+
 		DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, currentCellCoord));
 		DungeonMap.AddCorridor(previousCellCoord, currentCellCoord);
 		pathStack.Push(currentCellCoord);
@@ -110,7 +110,7 @@ FCell UDungeonGenerationComponent::CreateRandomizedCell(FDungeonMap& DungeonMap,
 {
 	FRoom RandomRoom = ERoomType::Normal == RoomType ? CreateRandomizedRoom() : CreateRandomizedRoom(5,5);
 	FCell NewCell = FCell(&DungeonMap, CellCoord, RandomRoom);
-	// TODO add culling ?
+	// TODO add culling
 	return NewCell;
 }
 
@@ -242,7 +242,7 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 
 void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor)
 {
-	ECardinalDirection Direction = Corridor.GeneralDirection;
+	ECardinalDirection Direction = Corridor.StartingTile.GetDirectionTo(Corridor.EndingTile);
 	FVector2D DisplacementVector = Corridor.StartingTile.GetDisplacementVectorTo(Corridor.EndingTile);
 	FIntCoordinate TargetEndTile = Corridor.EndingTile.GetNeighbor(GetOppositeDirection(Direction));
 
