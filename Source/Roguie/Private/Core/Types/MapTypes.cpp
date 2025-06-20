@@ -5,7 +5,8 @@
 // **************************************
 // ******** Cardinal Directions *********
 // **************************************
-ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction)
+
+ECardinalDirection ECardinalDirectionUtils::GetOppositeDirection(const ECardinalDirection& Direction)
 {
 	switch (Direction)
     {
@@ -17,7 +18,7 @@ ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction)
     }
 }
 
-FString GetDirectionString(const ECardinalDirection& Direction)
+FString ECardinalDirectionUtils::GetDirectionString(const ECardinalDirection& Direction)
 {
     switch (Direction)
     {
@@ -396,6 +397,18 @@ void FDungeonMap::FillCorridorTiles(const FCorridor& Corridor)
             Tiles[TileIndex] = newTile;
         }
     }   
+    int index = GetTileIndex(Corridor.StartingTile);
+    if (index >= 0 && index < Tiles.Num())
+    {
+        Tiles[index].bHasDoor = true;
+        Tiles[index].DoorDirections.Add(Corridor.GeneralDirection);
+    }
+    index = GetTileIndex(Corridor.EndingTile);
+    if (index >= 0 && index < Tiles.Num())
+    {
+        Tiles[index].bHasDoor = true;
+        Tiles[index].DoorDirections.Add(ECardinalDirectionUtils::GetOppositeDirection(Corridor.GeneralDirection));
+    }
 }
 
 // To Call at the end of the generation

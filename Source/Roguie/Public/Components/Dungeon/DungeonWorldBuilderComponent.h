@@ -39,11 +39,16 @@ private:
 
 	void BuildCell(const FIntCoordinate& CellCoord, const FCell* Cell);
 
+	TArray<ECardinalDirection> GetDoorsDirections(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord);
+	TArray<ECardinalDirection> GetWallDirection(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, TSet<FTileType> ToWallFilter, const TSet<ECardinalDirection>& ExcludeDirections);
+
 	FTransform GetTileOffset(const FIntCoordinate& TileCoord);
-	
+
+	void SpawnPlayerStart(const FDungeonMap& DungeonMap);
+	void SpawnNavMesh(const FDungeonMap& DungeonMap);
+
 	void SpawnTileFloor(FTransform TileTransform);
+	void SpawnTileDoors(FTransform TileTransform, const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
 	void SpawnTileWalls(FTransform TileTransform,  const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
-	void SpawnCorridor();
-	void SpawnCorridorTile(FTransform TileTransform);
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
 };

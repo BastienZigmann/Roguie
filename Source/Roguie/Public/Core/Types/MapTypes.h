@@ -17,14 +17,20 @@ struct ROGUIE_API FTile;
 UENUM()
 enum class ECardinalDirection : uint8
 {
+	None 		UMETA(DisplayName = "None"),
 	North       UMETA(DisplayName = "North"),
 	East        UMETA(DisplayName = "East"),
 	South       UMETA(DisplayName = "South"),
 	West        UMETA(DisplayName = "West")
 	
 };
-ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction);
-FString GetDirectionString(const ECardinalDirection& Direction);
+
+namespace ECardinalDirectionUtils
+{
+	inline TArray<ECardinalDirection> GetAllCardinalDirections() { return { ECardinalDirection::North, ECardinalDirection::East, ECardinalDirection::South, ECardinalDirection::West }; }
+	ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction);
+	FString GetDirectionString(const ECardinalDirection& Direction);
+};
 
 
 template<typename T>
@@ -196,6 +202,8 @@ enum class FTileType : uint8
 	Corridor    UMETA(DisplayName = "Corridor")
 };
 
+
+
 USTRUCT()
 struct ROGUIE_API FTile
 {
@@ -205,9 +213,21 @@ struct ROGUIE_API FTile
 	FIntCoordinate TileCoord; // Position of the tile in the Map
 	int32 IndexInTilesArray; // Index in FDungeon Tile array
 	FTileType Type; // Type of the tile (Floor, Corridor, etc.)	
+	
+	bool bHasDoor; // If this tile has a door
+	TArray<ECardinalDirection> DoorDirections; // Direction of the door if this tile is a door tile
 
 	FTile();
 	FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileType InType);
+
+	bool HasDoor() const { return bHasDoor && DoorDirections.Num() > 0; } // If the door direction is not None, it has a door
+	ECardinalDirection GetDoorDirection() const
+	{
+		if (HasDoor())
+			return DoorDirections[0];
+		else
+			return ECardinalDirection::North; // Default direction if no door
+	}
 };
 	
 UENUM()
@@ -302,6 +322,7 @@ struct ROGUIE_API FDungeonMap
 	}
 	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5);
 
+	inline FIntCoordinate GetStartingCellCoord() const	{ return FIntCoordinate(NbCellsX / 2, NbCellsY / 2);}
 	void SetCell(const FCell& Cell);
 	FCell* GetCell(const FIntCoordinate& Coord);
 	const FCell* GetCell(const FIntCoordinate& Coord) const;
@@ -310,6 +331,11 @@ struct ROGUIE_API FDungeonMap
 	void FillMapTiles();
 	// Find The cell containing a tile
 	FCell* GetCellFromTile(FTile Tile);
+	bool IsTileInMap(const FIntCoordinate& TileCoord) const
+	{
+		return TileCoord.x >= 0 && TileCoord.x < NbCellsX * NbTilesInCellsX &&
+			   TileCoord.y >= 0 && TileCoord.y < NbCellsY * NbTilesInCellsY;
+	}
 	TArray<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord) const;
 	FIntCoordinate GetTileWorldPosition(const FTile& Tile) const;
 	FColor GetDebugColor(const FCell& Cell) const;

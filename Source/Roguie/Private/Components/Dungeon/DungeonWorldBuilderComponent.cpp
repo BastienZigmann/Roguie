@@ -3,6 +3,7 @@
 
 #include "Components/Dungeon/DungeonWorldBuilderComponent.h"
 #include "Core/Data/DataAssets/Map/MapDataAsset.h"
+#include "Core/Types/MapTypes.h"
 #include "DungeonGeneration/MapGenerator.h"
 #include "Engine/StaticMeshActor.h"
 
@@ -14,7 +15,7 @@ UDungeonWorldBuilderComponent::UDungeonWorldBuilderComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 
     //EnableDebug();
-	EnableDebugTraces(); 
+	// EnableDebugTraces(); 
 }
 
 
@@ -43,6 +44,8 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
 	for (int32 x = 0; x < DungeonMap.Tiles.Num(); x++)
 	{
         const FTile& DungeonMapTile = DungeonMap.Tiles[x];
+        const FTransform& TileTransform = GetTileOffset(DungeonMapTile.TileCoord);
+        TArray<ECardinalDirection> Directions;
         switch (DungeonMapTile.Type)
         {
         case FTileType::Empty:
@@ -50,12 +53,20 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
             continue;
         case FTileType::Room:
             // Code to build room
-            SpawnTileFloor(GetTileOffset(DungeonMapTile.TileCoord));
+            SpawnTileFloor(TileTransform);
+
+            Directions = GetDoorsDirections(DungeonMap, DungeonMapTile.TileCoord);
+            SpawnTileDoors(TileTransform, Directions);
+
+            Directions = GetWallDirection(DungeonMap, DungeonMapTile.TileCoord, { FTileType::Room }, TSet<ECardinalDirection>(Directions));
+            SpawnTileWalls(TileTransform, Directions);
             break;
         
         case FTileType::Corridor:
             // Code to build corridor
-            SpawnCorridorTile(GetTileOffset(DungeonMapTile.TileCoord));
+            SpawnTileFloor(TileTransform);
+            Directions = GetWallDirection(DungeonMap, DungeonMapTile.TileCoord, { FTileType::Corridor, FTileType::Room }, TSet<ECardinalDirection>(Directions));
+            SpawnTileWalls(TileTransform, Directions);
             break;
 
 
@@ -63,7 +74,9 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
             break;
         }
         
-        
+        SpawnPlayerStart(DungeonMap);
+        SpawnNavMesh(DungeonMap);
+
 	}
 
     // Debug
@@ -102,6 +115,45 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
     }
 }
 
+TArray<ECardinalDirection> UDungeonWorldBuilderComponent::GetDoorsDirections(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord)
+{
+    const FTile& Tile = DungeonMap.Tiles[DungeonMap.GetTileIndex(TileCoord)];
+    if (!Tile.HasDoor())
+        return TArray<ECardinalDirection>(); // No doors in this tile
+    return Tile.DoorDirections;
+}
+
+TArray<ECardinalDirection> UDungeonWorldBuilderComponent::GetWallDirection(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, TSet<FTileType> Filter, const TSet<ECardinalDirection>& ExcludeDirections)
+{
+    TArray<ECardinalDirection> WallDirections;
+
+    // Check each direction for walls
+    for (ECardinalDirection Direction : ECardinalDirectionUtils::GetAllCardinalDirections())
+    {
+        if (ExcludeDirections.Contains(Direction))
+            continue; // Skip excluded directions
+
+        FIntCoordinate NeighborCoord = TileCoord.GetNeighbor(Direction);
+        
+        // check if tile is inside the map
+        if (!DungeonMap.IsTileInMap(NeighborCoord))
+        {
+            // If the neighbor coordinate is invalid, consider it a wall
+            WallDirections.Add(Direction);
+            continue;
+        }
+
+        int32 NeighborTileIndex = DungeonMap.GetTileIndex(NeighborCoord);
+        const FTile& NeighborTile = DungeonMap.Tiles[NeighborTileIndex];
+        if (!Filter.Contains(NeighborTile.Type))
+        {
+            WallDirections.Add(Direction);
+        }
+    }
+
+    return WallDirections;
+}
+
 // --- Positions functions
 // Compute Tile offset from cell world transform
 FTransform UDungeonWorldBuilderComponent::GetTileOffset(const FIntCoordinate& TileCoord)
@@ -138,8 +190,50 @@ void UDungeonWorldBuilderComponent::SpawnTileFloor(FTransform TileTransform)
 
 }
 
+void UDungeonWorldBuilderComponent::SpawnTileDoors(FTransform TileCenterTransform, const TArray<ECardinalDirection>& Directions)
+{
+    if (Directions.Num() == 0)
+          return; // No directions provided
+    
+    TArray<FMapElement>* Doors = &MapElementsDataAsset->Doors;
+    if (!Doors || Doors->Num() == 0)
+    {
+        ErrorLog("No door assets defined in the MapDataAsset", this);
+        return; // No doors defined
+    }
+
+    for (ECardinalDirection Direction : Directions)
+    {
+        FTransform DoorTransform = TileCenterTransform;
+        int32 ChoosenAsset = RandomStream.RandRange(0, Doors->Num() - 1);
+        switch (Direction)
+        {
+            case ECardinalDirection::North:
+                DoorTransform.AddToTranslation(FVector(0.0f, -MapElementsDataAsset->TileSize / 2.0f, 0.0f));
+                DoorTransform.SetRotation(FQuat(FRotator(0.0f, 0.0f, 0.0f))); // Rotate to face North
+                break;
+            case ECardinalDirection::East:
+                DoorTransform.AddToTranslation(FVector(MapElementsDataAsset->TileSize / 2.0f, 0.0f, 0.0f));
+                DoorTransform.SetRotation(FQuat(FRotator(0.0f, 90.0f, 0.0f))); // Rotate to face East
+                break;
+            case ECardinalDirection::South:
+                DoorTransform.AddToTranslation(FVector(0.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f));
+                DoorTransform.SetRotation(FQuat(FRotator(0.0f, 180.0f, 0.0f))); // Rotate to face South
+                break;
+            case ECardinalDirection::West:
+                DoorTransform.AddToTranslation(FVector(-MapElementsDataAsset->TileSize / 2.0f, 0.0f, 0.0f));
+                DoorTransform.SetRotation(FQuat(FRotator(0.0f, -90.0f, 0.0f))); // Rotate to face West
+                break;
+        }
+        SpawnMapElement(&(*Doors)[ChoosenAsset], DoorTransform);
+    }
+}
+
 void UDungeonWorldBuilderComponent::SpawnTileWalls(FTransform TileCenterTransform, const TArray<ECardinalDirection>& Directions)
 {
+    if (Directions.Num() == 0)
+        return; // No directions provided
+    
     TArray<FMapElement>* Walls = &MapElementsDataAsset->Walls;
     if (!Walls || Walls->Num() == 0)
     {
@@ -172,15 +266,6 @@ void UDungeonWorldBuilderComponent::SpawnTileWalls(FTransform TileCenterTransfor
         }
         SpawnMapElement(&(*Walls)[ChoosenAsset], WallTransform);
     }   
-}
-
-void UDungeonWorldBuilderComponent::SpawnCorridor()
-{
-    
-}
-
-void UDungeonWorldBuilderComponent::SpawnCorridorTile(FTransform TileTransform)
-{
 }
 
 void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, const FTransform& Transform)

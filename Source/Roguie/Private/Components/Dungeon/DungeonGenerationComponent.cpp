@@ -13,7 +13,7 @@ UDungeonGenerationComponent::UDungeonGenerationComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-	EnableDebug();
+	//EnableDebug();
 }
 
 
@@ -44,7 +44,7 @@ FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
 		MapElementsDataAsset->CellNumberOfTilesY
 	);
 
-	FIntCoordinate currentCellCoord(MapElementsDataAsset->MapWidth / 2, MapElementsDataAsset->MapHeight / 2);
+	FIntCoordinate currentCellCoord = DungeonMap.GetStartingCellCoord();
 	DebugLog("Starting cell at " + currentCellCoord.ToString(), this);
 	DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, currentCellCoord, ERoomType::Starting));
 
@@ -152,7 +152,7 @@ void UDungeonGenerationComponent::PickCorridorStartAndEndTile(const FDungeonMap&
 	Corridor.SetStartingTile(PotentialTiles[RandomIndex]);
 
 	PotentialTiles.Empty(); // Clear potential tiles for the ending position
-	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetEndingCell(), GetOppositeDirection(Corridor.GeneralDirection));
+	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetEndingCell(), ECardinalDirectionUtils::GetOppositeDirection(Corridor.GeneralDirection));
 	if (PotentialTiles.Num() == 0)
 	{
 		DebugLog("No potential tiles found for corridor ending position", this);
@@ -244,7 +244,7 @@ void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonM
 {
 	ECardinalDirection Direction = Corridor.GeneralDirection;
 	FVector2D DisplacementVector = Corridor.StartingTile.GetDisplacementVectorTo(Corridor.EndingTile);
-	FIntCoordinate TargetEndTile = Corridor.EndingTile.GetNeighbor(GetOppositeDirection(Direction));
+	FIntCoordinate TargetEndTile = Corridor.EndingTile.GetNeighbor(ECardinalDirectionUtils::GetOppositeDirection(Direction));
 
 	// Ensure the corridor is not in the starting room
 	FIntCoordinate CurrentTile = Corridor.StartingTile.GetNeighbor(Direction);
