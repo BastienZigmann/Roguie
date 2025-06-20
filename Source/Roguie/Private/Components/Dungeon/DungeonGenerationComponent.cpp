@@ -242,7 +242,7 @@ TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageW
 
 void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor)
 {
-	ECardinalDirection Direction = Corridor.StartingTile.GetDirectionTo(Corridor.EndingTile);
+	ECardinalDirection Direction = Corridor.GeneralDirection;
 	FVector2D DisplacementVector = Corridor.StartingTile.GetDisplacementVectorTo(Corridor.EndingTile);
 	FIntCoordinate TargetEndTile = Corridor.EndingTile.GetNeighbor(GetOppositeDirection(Direction));
 

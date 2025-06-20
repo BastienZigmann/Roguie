@@ -24,6 +24,7 @@ enum class ECardinalDirection : uint8
 	
 };
 ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction);
+FString GetDirectionString(const ECardinalDirection& Direction);
 
 
 template<typename T>

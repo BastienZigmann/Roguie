@@ -17,6 +17,18 @@ ECardinalDirection GetOppositeDirection(const ECardinalDirection& Direction)
     }
 }
 
+FString GetDirectionString(const ECardinalDirection& Direction)
+{
+    switch (Direction)
+    {
+        case ECardinalDirection::North: return TEXT("North");
+        case ECardinalDirection::East:  return TEXT("East");
+        case ECardinalDirection::South: return TEXT("South");
+        case ECardinalDirection::West:  return TEXT("West");
+        default: return TEXT("Unknown Direction");
+    }
+}
+
 // **************************************
 // ************ Corridors ***************
 // **************************************
@@ -451,12 +463,8 @@ FColor FDungeonMap::GetDebugColor(const FCell& Cell) const
 void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord)
 {
     if (StartingCellCoord == EndingCellCoord) return; // No corridor needed if start and end are the same
-    // check if rooms are actually against each other
-    UE_LOG(LogTemp, Warning, TEXT("AddCorridor: Adding corridor from Cell %s to Cell %s"), *StartingCellCoord.ToString(), *EndingCellCoord.ToString());
-    UE_LOG(LogTemp, Warning, TEXT("AddCorridor: Adding corridor from cell %s to cell %s (line 2)."), 
-            *GetCell(StartingCellCoord)->Room.ParentCell->CellCoord.ToString(), *GetCell(EndingCellCoord)->Room.ParentCell->CellCoord.ToString());
-    if (GetCell(StartingCellCoord)->Room.IsAdjacentTo(GetCell(EndingCellCoord)->Room) ) return;   
-    
+    // check if rooms are against each other
+    if (GetCell(StartingCellCoord)->Room.IsAdjacentTo(GetCell(EndingCellCoord)->Room) ) return;
 
     FCorridor NewCorridor(this, StartingCellCoord, EndingCellCoord);
     Corridors.Add(NewCorridor);
