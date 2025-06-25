@@ -8,7 +8,7 @@
 #include <AIController.h>
 #include "Navigation/PathFollowingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include <NavigationSystem.h>
 #include <Kismet/KismetSystemLibrary.h>

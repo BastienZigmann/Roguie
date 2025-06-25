@@ -5,7 +5,7 @@
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
-#include "Data/DataAssets/Enemies/EnemyDataAsset.h"
+#include "Core/Data/DataAssets/Enemies/EnemyDataAsset.h"
 #include <Kismet/GameplayStatics.h>
 #include "Lib/CombatUtils.h"
 #include "Characters/RoguieCharacter.h"

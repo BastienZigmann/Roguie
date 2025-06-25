@@ -16,22 +16,14 @@ void FLogger::ErrorLog(const FString& Msg, const UObject* Context) const
 	UE_LOG(LogTemp, Error, TEXT("%s%s"), *GeneratePrefix(Context), *Msg);
 }
 
-void FLogger::DebugTraces()
-{
-    if (!bDebugTraces)
-    {
-        return;
-    }
-}
-
 FString FLogger::GeneratePrefix(const UObject* Context) const
 {
-	FString Prefix = TEXT("[Debug] ");
+    FString Prefix = TEXT("[Debug] ");
 	if (Context)
 	{
-		FString ClassName = Context->GetClass()->GetName();
+        FString ClassName = Context->GetClass()->GetName();
 		FString OwnerInfo;
-
+        
 		// Try to get owner info based on object type
         const UActorComponent* Component = Cast<UActorComponent>(Context);
         if (Component && Component->GetOwner())
@@ -56,4 +48,79 @@ FString FLogger::GeneratePrefix(const UObject* Context) const
         }
 	}
 	return Prefix;
+}
+
+
+void FLogger::DebugTraces()
+{
+    if (!bDebugTraces)
+        return;
+}
+
+void FLogger::DebugTraceSphere(UWorld* World, const FVector& Location, float Radius, const FColor& Color, float Thickness, float Duration, bool Persistent) const
+{
+    if (!bDebugTraces)
+        return;
+    DrawDebugSphere(
+        World,
+        Location,
+        Radius,
+        12, // Segments
+        Color, // Convert FLinearColor to FColor
+        Persistent, // Persistent
+        Duration, // Duration
+        0, // Depth priority
+        Thickness // Thickness
+    );
+}
+void FLogger::DebugTraceCircle(UWorld* World, const FVector& Location, float Radius, const FColor& Color, float Thickness, float Duration, bool Persistent) const
+{
+    if (!bDebugTraces)
+        return;
+    DrawDebugCircle(
+        World,
+        Location,
+        Radius,
+        64,                        // Segments for smoothness
+        Color,
+        Persistent,                     
+        Duration,                      // Duration (0 = 1 frame)
+        0,                         // Depth priority
+        Thickness,                      // Thickness
+        FVector(1, 0, 0),          // X axis
+        FVector(0, 1, 0),          // Y axis
+        false                      // Don't draw in 3D (flat circle)
+    );
+}
+void FLogger::DebugTraceRectangle(UWorld* World, const FVector& Location, const FRotator& Rotation, const FVector& Extent, const FColor& Color, float Thickness, float Duration, bool Persistent) const
+{
+    if (!bDebugTraces)
+        return;
+    FVector HalfExtent = Extent * 0.5f;
+    DrawDebugBox(
+        World,
+        Location,
+        HalfExtent,
+        FQuat(Rotation), // Convert FRotator to FQuat
+        Color, // Convert FLinearColor to FColor
+        Persistent, // Persistent
+        Duration, // Duration (0 = 1 frame)
+        0 // Depth priority
+    );
+}
+
+void FLogger::DebugTraceLine(UWorld* World, const FVector& Start, const FVector& End, const FColor& Color, float Thickness, float Duration, bool Persistent) const
+{
+    if (!bDebugTraces)
+        return;
+    DrawDebugLine(
+        World,
+        Start,
+        End,
+        Color,
+        Persistent,
+        Duration,
+        0, // Depth priority
+        Thickness // Thickness
+    );
 }

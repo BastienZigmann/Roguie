@@ -7,7 +7,7 @@
 #include "GameFramework/Actor.h"
 #include "Core/Types/CharacterTypes.h"
 #include "Core/Types/WeaponTypes.h"
-#include "Data/DataTables/WeaponAnimationData.h"
+#include "Core/Data/DataTables/WeaponAnimationData.h"
 #include "Utils/Logger.h"
 #include "WeaponBase.generated.h"
 

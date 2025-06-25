@@ -2,7 +2,7 @@
 
 
 #include "Weapons/WeaponBase.h"
-#include "Data/DataAssets/Weapons/WeaponDataAsset.h"
+#include "Core/Data/DataAssets/Weapons/WeaponDataAsset.h"
 #include "Animation/AnimNotifies/AnimNotify_PlayerHit.h"
 #include "Animation/AnimNotifies/AnimNotify_PlayerWeaponSwitch.h"
 #include "Components/Character/CharacterAnimManagerComponent.h"

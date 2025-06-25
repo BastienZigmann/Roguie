@@ -7,7 +7,7 @@
 #include <Kismet/KismetSystemLibrary.h>
 #include "Components/Character/CharacterStateComponent.h"
 #include "Components/Character/CharacterAnimManagerComponent.h"
-#include "Data/DataAssets/Characters/CharacterDataAsset.h"
+#include "Core/Data/DataAssets/Characters/CharacterDataAsset.h"
 
 // Sets default values for this component's properties
 UCharacterDashComponent::UCharacterDashComponent()

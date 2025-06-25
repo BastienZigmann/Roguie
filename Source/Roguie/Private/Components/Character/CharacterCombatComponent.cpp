@@ -2,7 +2,7 @@
 
 #include "Components/Character/CharacterCombatComponent.h"
 #include "CoreMinimal.h"
-#include "Data/DataTables/WeaponAnimationData.h"
+#include "Core/Data/DataTables/WeaponAnimationData.h"
 #include "Components/Character/CharacterStateComponent.h"
 #include "Components/Character/CharacterAnimManagerComponent.h"
 #include "Components/Character/CharacterInventoryComponent.h"

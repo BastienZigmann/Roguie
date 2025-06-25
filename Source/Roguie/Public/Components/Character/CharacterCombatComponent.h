@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/Character/CharacterBaseComponent.h"
 #include "Core/Types/CombatTypes.h"
-#include "Data/DataTables/WeaponAnimationData.h"
+#include "Core/Data/DataTables/WeaponAnimationData.h"
 #include "Utils/Logger.h"
 #include "CharacterCombatComponent.generated.h"
 
