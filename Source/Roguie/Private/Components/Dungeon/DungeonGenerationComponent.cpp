@@ -34,50 +34,51 @@ void UDungeonGenerationComponent::BeginPlay()
 	
 }
 
-FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
+FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
 {
 	DebugLog("Generating dungeon map...", this);
 	RandomStream.Initialize(OwningActor->GetMapSeed());
-	FDungeonMap DungeonMap = FDungeonMap(
+	FDungeonMap* DungeonMap = new FDungeonMap(
 		MapElementsDataAsset->MapWidth,
 		MapElementsDataAsset->MapHeight,
 		MapElementsDataAsset->CellNumberOfTilesX,
-		MapElementsDataAsset->CellNumberOfTilesY
+		MapElementsDataAsset->CellNumberOfTilesY,
+		MapElementsDataAsset->TileSize
 	);
 
-	FIntCoordinate currentCellCoord = DungeonMap.GetStartingCellCoord();
+	FIntCoordinate currentCellCoord = DungeonMap->GetStartingCellCoord();
 	DebugLog("Starting cell at " + currentCellCoord.ToString(), this);
-	DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, currentCellCoord, ERoomType::Starting));
+	DungeonMap->SetCell(CreateRandomizedCell(*DungeonMap, currentCellCoord, ERoomType::Starting));
 
 	TArray<FIntCoordinate> pathStack;
 	pathStack.Push(currentCellCoord);
 
 	// Cell Culling
 	DebugLog("Cells culling starting...", this);
-	int numberOfRoomsToCull = RandomStream.RandRange(0, DungeonMap.NbCellsX);
+	int numberOfRoomsToCull = RandomStream.RandRange(0, DungeonMap->NbCellsX);
 	for (int n = 0; n < numberOfRoomsToCull - 1; n++)
 	{
-		int x = RandomStream.RandRange(0, DungeonMap.NbCellsX - 1);
-		int y = RandomStream.RandRange(0, DungeonMap.NbCellsY - 1);
+		int x = RandomStream.RandRange(0, DungeonMap->NbCellsX - 1);
+		int y = RandomStream.RandRange(0, DungeonMap->NbCellsY - 1);
 		if (currentCellCoord == FIntCoordinate(x, y))
 		{
 			DebugLog("Can't cull current cell at " + currentCellCoord.ToString(), this);
 			n--;
 			continue; // Skip culling the current cell
 		}
-		DungeonMap.BanCell(FIntCoordinate(x, y));
+		DungeonMap->BanCell(FIntCoordinate(x, y));
 	}
 
 	// Actual marching generation
 	DebugLog("Starting dungeon generation loop...", this);
 	FIntCoordinate previousCellCoord = currentCellCoord;
 	// TODO Add check if any available tiles are surrounded by forbidden tiles and thus cannot be reached
-	while (DungeonMap.GetNumberOfOccupiedCells() < MapElementsDataAsset->IntendedNumberOfRooms && DungeonMap.HasAvailableCells())
+	while (DungeonMap->GetNumberOfOccupiedCells() < MapElementsDataAsset->IntendedNumberOfRooms && DungeonMap->HasAvailableCells())
 	{
-		TArray<ECardinalDirection> AvailableDirections = DungeonMap.GetAvailableDirections(currentCellCoord); // Get Empty cells
+		TArray<ECardinalDirection> AvailableDirections = DungeonMap->GetAvailableDirections(currentCellCoord); // Get Empty cells
 		if (AvailableDirections.Num() == 0)
 		{
-			AddCorridorToExistingRooms(DungeonMap, currentCellCoord, 30); // 30% chance to create a corridor to an existing room
+			AddCorridorToExistingRooms(*DungeonMap, currentCellCoord, 30); // 30% chance to create a corridor to an existing room
 
 			DebugLog("No available directions", this);
 			if (pathStack.Num() == 0)
@@ -90,28 +91,28 @@ FDungeonMap UDungeonGenerationComponent::GenerateDungeonMap()
 			continue;
 		}
 
-		AddCorridorToExistingRooms(DungeonMap, currentCellCoord, 15);
+		AddCorridorToExistingRooms(*DungeonMap, currentCellCoord, 15);
 
 		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1); // Get a random direction from the available directions
 		previousCellCoord = currentCellCoord;
 		currentCellCoord = currentCellCoord.GetNeighbor(AvailableDirections[RandomDirection]);
 		DebugLog(FString::Printf(TEXT("Walked to cell %s, from cell %s"), *currentCellCoord.ToString(), *previousCellCoord.ToString()), this);
 
-		DungeonMap.SetCell(CreateRandomizedCell(DungeonMap, currentCellCoord));
-		DungeonMap.AddCorridor(previousCellCoord, currentCellCoord);
+		DungeonMap->SetCell(CreateRandomizedCell(*DungeonMap, currentCellCoord));
+		DungeonMap->AddCorridor(previousCellCoord, currentCellCoord);
 		pathStack.Push(currentCellCoord);
 	}
 
-	AddCorridorToExistingRooms(DungeonMap, DungeonMap.GetStartingCellCoord(), 30); 
-	AddCorridorToExistingRooms(DungeonMap, DungeonMap.GetStartingCellCoord(), 30); 
+	AddCorridorToExistingRooms(*DungeonMap, DungeonMap->GetStartingCellCoord(), 30); 
+	AddCorridorToExistingRooms(*DungeonMap, DungeonMap->GetStartingCellCoord(), 30); 
 
 	DebugLog("Computing corridors...", this);
-	ComputeCorridors(DungeonMap);
+	ComputeCorridors(*DungeonMap);
 
 	DebugLog("Filling map tiles...", this);
-	DungeonMap.FillMapTiles();
+	DungeonMap->FillMapTiles();
 
-	DebugLog(FString::Printf(TEXT("Dungeon map generation completed with %d rooms"), DungeonMap.GetNumberOfOccupiedCells()), this);
+	DebugLog(FString::Printf(TEXT("Dungeon map generation completed with %d rooms"), DungeonMap->GetNumberOfOccupiedCells()), this);
 
 	return DungeonMap;
 }

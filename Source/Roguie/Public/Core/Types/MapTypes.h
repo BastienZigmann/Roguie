@@ -260,6 +260,7 @@ struct ROGUIE_API FRoom
 	void SetType(ERoomType InRoomType) { RoomType = InRoomType; }
 
 	bool IsAdjacentTo(const FRoom& Other) const;
+	FVector GetWorldPositionCenter() const;
 
 	inline FString ToString() const
 	{
@@ -294,6 +295,8 @@ struct ROGUIE_API FCell
 	const FCell& GetNeighbor(ECardinalDirection Direction) const;
 	bool IsNeighbor(const FCell& Other) const; // Check if the other cell is a neighbor in the map
 
+	FVector GetFirstTileWorldPosition() const;
+
 	FString ToString() const
 	{
 		return FString::Printf(TEXT("Cell at %s with room of type %s, its index are : CellArray : %d and TileArray : %d, IsValid %d"), *CellCoord.ToString(), *UEnum::GetValueAsString(Room.RoomType), IndexInCellsArray, IndexInTileArray, IsValid());
@@ -316,6 +319,10 @@ struct ROGUIE_API FDungeonMap
 	TBitArray<> OccupiedCells; // Cells with rooms
 	TBitArray<> BannedCells; // Cells forbidden
 
+	// Other
+	FVector WorldLocationTilesOffset;
+	float TileSize; // Size of a tile in Unreal units, used for conversion to FVector
+
 	FDungeonMap() 
 	{
 		NbCellsX = 0;
@@ -324,10 +331,13 @@ struct ROGUIE_API FDungeonMap
 		NbTilesInCellsY = 5; // Default tile size in cells
 		OccupiedCells.Init(false, NbCellsX * NbCellsY);
 		BannedCells.Init(false, NbCellsX * NbCellsY);
+		TileSize = 400.0f; // Default tile size in Unreal units
 	}
-	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5);
+	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5, float InTileSize = 400.0f);
 
-	inline FIntCoordinate GetStartingCellCoord() const	{ return FIntCoordinate(NbCellsX / 2, NbCellsY / 2);}
+	inline FIntCoordinate GetStartingCellCoord() const { return FIntCoordinate(NbCellsX / 2, NbCellsY / 2); }
+	inline const FCell* GetStartingCell() const { return GetCell(GetStartingCellCoord()); }
+	FVector GetPlayerStartingWorldLocation() const { return (GetStartingCell()->Room.GetWorldPositionCenter() + FVector(0, 0, 100)); }
 	void SetCell(const FCell& Cell);
 	FCell* GetCell(const FIntCoordinate& Coord);
 	const FCell* GetCell(const FIntCoordinate& Coord) const;
@@ -348,7 +358,6 @@ struct ROGUIE_API FDungeonMap
 	}
 	TArray<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord) const;
 	TArray<ECardinalDirection> GetExistingRoomsDirection(const FIntCoordinate& CellCoord) const;
-	FIntCoordinate GetTileWorldPosition(const FTile& Tile) const;
 	FColor GetDebugColor(const FCell& Cell) const;
 
 	int32 GetNumberOfOccupiedCells() const { return OccupiedCells.CountSetBits(); }

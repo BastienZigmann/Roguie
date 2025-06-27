@@ -19,7 +19,7 @@ UDungeonWorldBuilderComponent::UDungeonWorldBuilderComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
 
-    EnableDebug();
+    //EnableDebug();
 	//EnableDebugTraces(); 
 }
 
@@ -315,53 +315,31 @@ void UDungeonWorldBuilderComponent::SpawnMapElement(const FMapElement* Element, 
 
 void UDungeonWorldBuilderComponent::SetupNavMesh(const FDungeonMap& DungeonMap)
 {
-    DebugLog("Finding existing NavMeshBoundsVolume...", this);
-
-    ANavMeshBoundsVolume* NavMeshVolume = nullptr;
-
-    for (TActorIterator<ANavMeshBoundsVolume> It(GetWorld()); It; ++It)
-    {
-        NavMeshVolume = *It;
-        break; // just grab the first one
-    }
-
-    if (!NavMeshVolume)
-    {
-        DebugLog("No existing NavMeshBoundsVolume found!", this);
-        return;
-    }
-
-    DebugLog("Using existing NavMeshBoundsVolume: " + NavMeshVolume->GetName(), this);
-
-    // Dungeon dimensions
     int32 TotalTilesX = DungeonMap.NbCellsX * DungeonMap.NbTilesInCellsX;
     int32 TotalTilesY = DungeonMap.NbCellsY * DungeonMap.NbTilesInCellsY;
-
+    
     float TileSize = MapElementsDataAsset->TileSize;
     float Width = TotalTilesX * TileSize;
     float Height = TotalTilesY * TileSize;
-
-    FVector DesiredExtent = FVector(Width / 2.0f, Height / 2.0f, 50.0f);
+    
+    FVector DesiredExtent = FVector(Width, Height, 50.0f);
     FVector DesiredLocation = FVector(Width / 2.0f, Height / 2.0f, 0.0f);
+    FRotator DesiredRotation = FRotator::ZeroRotator; // No rotation needed
 
-    // Default brush extent is (1000,1000,200) = total 2000x2000x400 box
-    //FVector BaseExtent(1000.0f, 1000.0f, 200.0f);
-    FVector Scale = FVector(
-        DesiredExtent.X,// / BaseExtent.X,
-        DesiredExtent.Y,// / BaseExtent.Y,
-        DesiredExtent.Z// / BaseExtent.Z
-    );
+    AddNavMesh(DesiredLocation, DesiredExtent, DesiredRotation);
+}
 
-    NavMeshVolume->GetRootComponent()->SetMobility(EComponentMobility::Movable);
-    NavMeshVolume->SetActorScale3D(Scale);
-    NavMeshVolume->SetActorLocation(DesiredLocation);
+void UDungeonWorldBuilderComponent::AddNavMesh(FVector Location, FVector Extent, FRotator Rotation)
+{
+    ANavMeshBoundsVolume* NavMeshVolume = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Location, Rotation);
+    if (!NavMeshVolume) return;
+
+    NavMeshVolume->GetRootComponent()->Bounds = FBox(-Extent, Extent);
 
     UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
     if (NavSys)
     {
         NavSys->OnNavigationBoundsUpdated(NavMeshVolume);
         NavSys->Build();
-        DebugLog("NavMesh rebuilt using existing volume", this);
     }
 }
-

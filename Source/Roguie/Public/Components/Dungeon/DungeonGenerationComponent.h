@@ -23,7 +23,7 @@ public:
 	// Sets default values for this component's properties
 	UDungeonGenerationComponent();
 
-	FDungeonMap GenerateDungeonMap();
+	FDungeonMap* GenerateDungeonMap();
 
 protected:
 	// Called when the game starts

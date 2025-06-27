@@ -22,6 +22,7 @@ public:
 	AMapGenerator();
 
 	void CreateDungeonMap();
+	FVector GetPlayerStartingLocation() const;
 
 	// Components accessors
 	UDungeonGenerationComponent* GetDungeonGenerationComponent() const { return DungeonGenerationComponent; }
@@ -32,11 +33,12 @@ public:
 	UMapDataAsset* GetMapElementsDataAsset() const { return MapElementsDataAsset; }
 
 	// Dungeon Map accessor
-	const FDungeonMap& GetDungeonMap() const { return DungeonMap; }
+	const FDungeonMap& GetDungeonMap() const { return *DungeonMap; }
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void BeginDestroy() override;
 
 private:
 	// --- Components
@@ -51,6 +53,6 @@ private:
 	int32 GetDynamicSeed();
 
 	// --- Dungeon Map
-	FDungeonMap DungeonMap;
+	FDungeonMap* DungeonMap;
 
 };

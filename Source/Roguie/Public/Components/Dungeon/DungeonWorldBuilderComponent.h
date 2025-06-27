@@ -53,5 +53,6 @@ private:
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
 
 	void SetupNavMesh(const FDungeonMap& DungeonMap);
+	void AddNavMesh(FVector Location, FVector Extent, FRotator Rotation = FRotator::ZeroRotator);
 
 };

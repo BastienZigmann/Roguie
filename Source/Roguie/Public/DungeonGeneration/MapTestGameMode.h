@@ -25,4 +25,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+private:
+	ACharacter* SpawnPlayer(FVector Location, FRotator Rotation = FRotator::ZeroRotator);
+	void PossessPlayer(ACharacter* PlayerCharacter);
+
+	virtual void HandleStartingNewPlayer_Implementation(APlayerController* NewPlayer) override;
+
 };

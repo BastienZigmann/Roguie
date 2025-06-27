@@ -37,14 +37,29 @@ void AMapGenerator::BeginPlay()
 	CreateDungeonMap();
 }
 
+void AMapGenerator::BeginDestroy()
+{
+	Super::BeginDestroy();
+	if (DungeonMap)
+	{
+		delete DungeonMap;
+		DungeonMap = nullptr;
+	}
+}
+
 // For manual call
 void AMapGenerator::CreateDungeonMap()
 {
 	DungeonMap = DungeonGenerationComponent->GenerateDungeonMap();
-	DebugLog("Dungeon map generated with " + FString::FromInt(DungeonMap.Cells.Num()) + " cells.", this);
+	DebugLog("Dungeon map generated with " + FString::FromInt(DungeonMap->Cells.Num()) + " cells.", this);
 	DungeonWorldBuilderComponent->BuildDungeon();
 }
 
+FVector AMapGenerator::GetPlayerStartingLocation() const
+{
+	// Get the player starting location from the map elements data asset
+    return DungeonMap->GetPlayerStartingWorldLocation();
+}
 
 int32 AMapGenerator::GetDynamicSeed()
 {

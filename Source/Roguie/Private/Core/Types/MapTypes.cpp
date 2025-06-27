@@ -185,6 +185,11 @@ bool FRoom::IsAdjacentTo(const FRoom& Other) const
     return false;
 }
 
+FVector FRoom::GetWorldPositionCenter() const 
+{
+    return ParentCell->GetFirstTileWorldPosition() + ((Position.ToFVector() + FVector(LengthX / 2, LengthY / 2, 0.0)) * ParentCell->ParentMap->TileSize); 
+}
+
 
 // **************************************
 // ************ FCell *******************
@@ -263,11 +268,16 @@ bool FCell::IsNeighbor(const FCell& Other) const
     return CellCoord.GetManhattanDistance(Other.CellCoord) == 1;
 }
 
+FVector FCell::GetFirstTileWorldPosition() const 
+{
+    return (BaseTileCoordinate.ToFVector() * ParentMap->TileSize) + ParentMap->WorldLocationTilesOffset;
+}
+
 // **************************************
 // ************ FDungeonMap *************
 // **************************************
-FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX, int32 InNbTilesInCellsY)
-		: NbCellsX(InNbCellsX), NbTilesInCellsX(InNbTilesInCellsX), NbCellsY(InNbCellsY), NbTilesInCellsY(InNbTilesInCellsY)
+FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX, int32 InNbTilesInCellsY, float InTileSize)
+		: NbCellsX(InNbCellsX), NbTilesInCellsX(InNbTilesInCellsX), NbCellsY(InNbCellsY), NbTilesInCellsY(InNbTilesInCellsY), TileSize(InTileSize)
 {
     int32 TotalCells = NbCellsX * NbCellsY;
     if (TotalCells <= 0)
@@ -294,6 +304,8 @@ FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCe
     // Init flag bitarrays
     OccupiedCells.Init(false, TotalCells);
     BannedCells.Init(false, TotalCells);
+
+    WorldLocationTilesOffset = FVector(TileSize / 2.0f, TileSize / 2.0f, 0.0f);
 }
 
 void FDungeonMap::SetCell(const FCell& Cell) 
@@ -461,14 +473,6 @@ TArray<ECardinalDirection> FDungeonMap::GetExistingRoomsDirection(const FIntCoor
     if (CellCoord.x > 0 && IsOccupied(CellCoord.GetNeighbor(ECardinalDirection::West)))
         ExistingRoomsDirections.Add(ECardinalDirection::West);
     return ExistingRoomsDirections;
-}
-
-FIntCoordinate FDungeonMap::GetTileWorldPosition(const FTile& Tile) const
-{
-	return FIntCoordinate(
-		Tile.TileCoord.x * NbTilesInCellsX + NbTilesInCellsX / 2,
-		Tile.TileCoord.y * NbTilesInCellsY + NbTilesInCellsY / 2
-	);
 }
 
 FColor FDungeonMap::GetDebugColor(const FCell& Cell) const
