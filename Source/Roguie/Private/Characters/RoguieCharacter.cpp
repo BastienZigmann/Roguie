@@ -15,7 +15,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Weapons/WeaponSword.h"
+#include "Core/Data/DataAssets/Characters/ControlsDataAsset.h"
 #include <GameFramework/SpringArmComponent.h>
+#include "Characters/RoguiePlayerController.h"
 
 // *********************************************
 // ********* INIT ******************************
@@ -44,7 +46,7 @@ ARoguieCharacter::ARoguieCharacter()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     GetMesh()->SetupAttachment(RootComponent);
 	
-    // EnableDebug();
+    EnableDebug();
 }
 
 void ARoguieCharacter::BeginPlay()
@@ -89,21 +91,22 @@ void ARoguieCharacter::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
 
-    if (NewController)
+    if (!NewController) return;
+
+    PlayerController = Cast<ARoguiePlayerController>(NewController);
+    if (!PlayerController) return;
+    
+    TObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem =
+        ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+
+    if (!InputSubsystem) return;
+    if (!ControlsDataAsset)
     {
-
-        PlayerController = Cast<APlayerController>(NewController);
-        if (PlayerController)
-        {
-            TObjectPtr<UEnhancedInputLocalPlayerSubsystem> InputSubsystem =
-                ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-
-            if (InputSubsystem)
-            {
-                InputSubsystem->AddMappingContext(CharacterDataAsset->InputMappingContext, 0);
-            }
-        }
+        ErrorLog(TEXT("PossessedBy: ControlsDataAsset is not assigned!"), this);
+        return;
     }
+
+    InputSubsystem->AddMappingContext(ControlsDataAsset->InputMappingContext, 0);
 }
 
 float ARoguieCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -119,24 +122,30 @@ void ARoguieCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+    if (!ControlsDataAsset)
+    {
+        ErrorLog(TEXT("SetupPlayerInputComponent: ControlsDataAsset is not assigned!"), this);
+        return;
+    }
+ 
     // Ensure we're using Enhanced Input
     TObjectPtr<UEnhancedInputComponent> EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent);
     if (!EnhancedInputComponent) return;
     // Bind MoveForward and MoveRight (using Enhanced Input)
-    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveForward);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveForward);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveRightAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::MoveRight);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->MoveRightAction, ETriggerEvent::Completed, this, &ARoguieCharacter::EndMoveRight);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->DashAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::HandleDashInput);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->AttackAction, ETriggerEvent::Started, this, &ARoguieCharacter::HandleAttackInput);
-    EnhancedInputComponent->BindAction(CharacterDataAsset->InventoryInput, ETriggerEvent::Started, this, &ARoguieCharacter::HandleInventoryInput);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->MoveForwardAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::HandleMoveForward);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->MoveForwardAction, ETriggerEvent::Completed, this, &ARoguieCharacter::HandleEndMoveForward);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->MoveRightAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::HandleMoveRight);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->MoveRightAction, ETriggerEvent::Completed, this, &ARoguieCharacter::HandleEndMoveRight);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->DashAction, ETriggerEvent::Triggered, this, &ARoguieCharacter::HandleDashInput);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->AttackAction, ETriggerEvent::Started, this, &ARoguieCharacter::HandleAttackInput);
+    EnhancedInputComponent->BindAction(ControlsDataAsset->InventoryInput, ETriggerEvent::Started, this, &ARoguieCharacter::HandleInventoryInput);
 }
 
 // *********************************************
 // ********* INPUTS ****************************
 // *********************************************
 
-void ARoguieCharacter::MoveForward(const FInputActionValue& Value)
+void ARoguieCharacter::HandleMoveForward(const FInputActionValue& Value)
 {
     float MovementValue = Value.Get<float>();
 
@@ -153,7 +162,7 @@ void ARoguieCharacter::MoveForward(const FInputActionValue& Value)
     GetCharacterStateComponent()->EnterMovingState();
 }
 
-void ARoguieCharacter::MoveRight(const FInputActionValue& Value)
+void ARoguieCharacter::HandleMoveRight(const FInputActionValue& Value)
 {    
     float MovementValue = Value.Get<float>();
 
@@ -170,7 +179,7 @@ void ARoguieCharacter::MoveRight(const FInputActionValue& Value)
     GetCharacterStateComponent()->EnterMovingState();
 }
 
-void ARoguieCharacter::EndMoveForward()
+void ARoguieCharacter::HandleEndMoveForward()
 {
     if (!GetCharacterStateComponent()->IsMoving()) return;
 
@@ -182,7 +191,7 @@ void ARoguieCharacter::EndMoveForward()
         GetCharacterStateComponent()->EnterIdleState();
 }
 
-void ARoguieCharacter::EndMoveRight()
+void ARoguieCharacter::HandleEndMoveRight()
 {
     if (!GetCharacterStateComponent()->IsMoving()) return;
     
@@ -224,8 +233,6 @@ void ARoguieCharacter::HandleInventoryInput()
 		}
     }
 }
-
-
 
 // *********************************************
 // ********* TICK ******************************

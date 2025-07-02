@@ -25,6 +25,8 @@ class UCharacterCombatComponent;
 class UCharacterInventoryComponent;
 class UCharacterDashComponent;
 class UCharacterAnimManagerComponent;
+class UControlsDataAsset;
+class ARoguiePlayerController;
 
 UCLASS()
 class ROGUIE_API ARoguieCharacter : public ACharacter, public FLogger
@@ -36,10 +38,10 @@ public:
 	ARoguieCharacter();
 
 	// Movement functions
-	void MoveForward(const FInputActionValue& Value);
-	void MoveRight(const FInputActionValue& Value);
-	void EndMoveForward();
-	void EndMoveRight();
+	void HandleMoveForward(const FInputActionValue& Value);
+	void HandleMoveRight(const FInputActionValue& Value);
+	void HandleEndMoveForward();
+	void HandleEndMoveRight();
 	void HandleDashInput();
 	void HandleAttackInput();
 	void HandleInventoryInput();
@@ -75,8 +77,10 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DataAsset", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCharacterDataAsset> CharacterDataAsset;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "DataAsset", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UControlsDataAsset> ControlsDataAsset;
 
-	TObjectPtr<APlayerController> PlayerController;
+	TObjectPtr<ARoguiePlayerController> PlayerController;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent> CameraBoom;

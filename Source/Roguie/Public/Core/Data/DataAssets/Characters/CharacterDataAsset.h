@@ -32,21 +32,6 @@ public:
 	float MovementSpeed = 100.f;
 	UPROPERTY(EditAnywhere, Category = "Character");
 	int32 MaxWeaponSlots = 2; // Number of weapon slots
-		
-	// ------- Inputs
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputMappingContext> InputMappingContext;
-	//InputActions
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> MoveForwardAction;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> MoveRightAction;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> DashAction;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> AttackAction;
-	UPROPERTY(EditAnywhere, Category = "Input")
-	TObjectPtr<UInputAction> InventoryInput;
 	
 	// ------- Dash
 	UPROPERTY(EditAnywhere, Category = "Movement|Dash")
