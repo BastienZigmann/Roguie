@@ -24,6 +24,7 @@ public:
 	bool HasSpottedPlayer() const { return bIsPlayerDetectedInRange; }
 	FVector GetLastKnownPlayerLocation() const { return LastKnownPlayerLocation; }
 	ARoguieCharacter* GetPlayerCharacter();
+	float GetLastKnownPlayerPositionDistance();
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerPositionUpdate);
 	UPROPERTY(BlueprintAssignable)
@@ -61,6 +62,7 @@ private:
 
 	bool IsPlayerInAttackRange();
 	bool IsPlayerInRange();
+	float GetPlayerDistance();
 	bool HasLineOfSight();
 	void DetectPlayer();
 

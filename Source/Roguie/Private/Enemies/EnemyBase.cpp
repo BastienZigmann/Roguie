@@ -48,11 +48,17 @@ void AEnemyBase::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (!GetDataAsset())
+	{
+		ErrorLog("Missing DataAsset", this);
+		return;
+	}
+
 	if (GetHealthComponent()) GetHealthComponent()->Initialize(GetDataAsset()->MaxHealth);
 
 	GetCharacterMovement()->SetAvoidanceEnabled(true);      // Enable RVO/crowd avoidance
-	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1�1.0
-	GetCharacterMovement()->AvoidanceConsiderationRadius = 150.f; // how far to consider others
+	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1 & 1.0
+	GetCharacterMovement()->AvoidanceConsiderationRadius = 300.f; // how far to consider others
 	GetCharacterMovement()->SetAvoidanceGroup(1); // can group by enemy type
 	GetCharacterMovement()->SetGroupsToAvoid(1);  // avoid enemies
 	GetCharacterMovement()->NavAgentProps.AgentRadius = 50.f;

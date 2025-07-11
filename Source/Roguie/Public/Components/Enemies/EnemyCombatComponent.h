@@ -45,6 +45,12 @@ private:
 	bool IsGlobalCooldownOver() const;
 	bool IsAttackTypeCooldownOver(int32 Index);
 
+	// --- Attack Pattern Selection ---
+	int32 BestPatternIndex = INDEX_NONE;
+	float LastPatternSelectionTime = 0.0f;
+	TMap<int32, int> AttackNumberOfUseMap;
+	void ComputeNextAttackPattern();
+	
 
 	void HitOnPlayer(AActor* HitActor, const FAttackPattern& Pattern);
 

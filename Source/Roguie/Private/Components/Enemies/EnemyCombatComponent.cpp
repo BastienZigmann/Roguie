@@ -23,11 +23,13 @@ void UEnemyCombatComponent::BeginPlay()
 	if (OwningActor && OwningActor->GetDataAsset())
 	{
 		AttackPatterns = OwningActor->GetDataAsset()->AttackPatterns;
+		BestPatternIndex = INDEX_NONE;
 		GlobalCooldownDuration = OwningActor->GetDataAsset()->GlobalAttackCooldown;
 		DebugLog(FString::Printf(TEXT("%i attack patterns loaded"), AttackPatterns.Num()), this);
 		for (int32 i = 0; i < AttackPatterns.Num(); ++i)
 		{
 			AttackTypeLastUseMap.FindOrAdd(i) = -FLT_MAX;
+			AttackNumberOfUseMap.FindOrAdd(i) = 0; // Initialize usage count for each attack pattern
 		}
 	}
 	else
@@ -68,7 +70,11 @@ void UEnemyCombatComponent::StartGlobalCooldown()
 
 bool UEnemyCombatComponent::CanAttack(int32 Index)
 {
-	if (!OwningActor) return false;
+	if (!OwningActor)
+	{
+		ErrorLog(TEXT("Owning actor is null, cannot check attack availability."), this);
+		return false;
+	}
 	if (!AttackPatterns.IsValidIndex(Index))
 	{
 		ErrorLog(FString::Printf(TEXT("Invalid attack pattern index: %d"), Index), this);
@@ -149,6 +155,7 @@ void UEnemyCombatComponent::StartAttack(int32 Index)
 		if (Pattern.AttackMontage)
 		{
 			OwningActor->GetAnimManagerComponent()->PlayAttackMontage(Index);
+			AttackNumberOfUseMap[Index]++;
 			StartAttackCooldown(Index);
 			StartGlobalCooldown();
 			DebugLog(FString::Printf(TEXT("Attack started for %s"), *GetAttackPatternName(Index)), this);
@@ -196,7 +203,7 @@ void UEnemyCombatComponent::HitOnPlayer(AActor* HitActor, const FAttackPattern& 
 	UGameplayStatics::ApplyDamage(HitActor, Pattern.Damage, OwningActor->GetInstigatorController(), OwningActor, nullptr);
 }
 
-FString  UEnemyCombatComponent::GetAttackPatternName(int32 Index) const
+FString UEnemyCombatComponent::GetAttackPatternName(int32 Index) const
 { 
 	
 	if (Index != INDEX_NONE && AttackPatterns.IsValidIndex(Index))
@@ -204,4 +211,72 @@ FString  UEnemyCombatComponent::GetAttackPatternName(int32 Index) const
 		return AttackPatterns[Index].PatternName.ToString();
 	}
 	return AttackPatterns[CurrentAttackIndex].PatternName.ToString();
+}
+
+void UEnemyCombatComponent::ComputeNextAttackPattern() 
+{
+	if (!OwningActor) return;
+	if (AttackPatterns.IsEmpty())
+	{
+		ErrorLog(TEXT("No attack patterns available."), this);
+		return;
+	}
+
+	int32 localBestPatternIndex = INDEX_NONE;
+	float BestScore = -FLT_MAX;
+
+	float Distance = OwningActor->GetPlayerDetectorComponent()->GetLastKnownPlayerPositionDistance();	
+
+	for (int32 i = 0; i < AttackPatterns.Num(); ++i)
+	{
+		const FAttackPattern& Pattern = AttackPatterns[i];
+
+        // --- Distance scoring: closer to optimal range = better
+        float OptimalDist = (Pattern.MinRange + Pattern.MaxRange) * 0.5f;
+        float RangeSpread = (Pattern.MaxRange - Pattern.MinRange) * 0.5f + 1.0f;
+        float DistScore = 1.0f - FMath::Clamp(FMath::Abs(Distance - OptimalDist) / RangeSpread, 0.0f, 1.0f);
+		DebugLog(FString::Printf(TEXT("Pattern %s: Distance Score = %.2f"), *Pattern.PatternName.ToString(), DistScore), this);
+
+        // --- Damage scoring: higher is better
+        float DamageScore = Pattern.Damage;
+		DebugLog(FString::Printf(TEXT("Pattern %s: Damage Score = %.2f"), *Pattern.PatternName.ToString(), DamageScore), this);
+
+        // --- Cooldown scoring: the less cooldown left, the better
+        float LastUsed = AttackTypeLastUseMap.Contains(i) ? AttackTypeLastUseMap[i] : -FLT_MAX;
+        float CooldownLeft = FMath::Max(0.0f, Pattern.Cooldown - (GetWorld()->GetTimeSeconds() - LastUsed));
+        float CooldownScore = 1.0f - FMath::Clamp(CooldownLeft / (Pattern.Cooldown + 0.01f), 0.0f, 1.0f); // 1 when ready, 0 when just used
+		DebugLog(FString::Printf(TEXT("Pattern %s: Cooldown Score = %.2f"), *Pattern.PatternName.ToString(), CooldownScore), this);
+
+        // --- Usage penalty: less used = better
+        int32 TimesUsed = AttackNumberOfUseMap.FindRef(i);
+        float UsagePenalty = TimesUsed * 0.5f;
+		DebugLog(FString::Printf(TEXT("Pattern %s: Usage Penalty = %.2f"), *Pattern.PatternName.ToString(), UsagePenalty), this);
+
+        // --- Optional: Priority, randomness, etc.
+        // float PriorityScore = Pattern.Priority * 0.5f;6
+        float Randomness = FMath::FRandRange(0.0f, 0.2f);
+		DebugLog(FString::Printf(TEXT("Pattern %s: Randomness = %.2f"), *Pattern.PatternName.ToString(), Randomness), this);
+
+        // --- Combine scores (tune weights as needed)
+        float Score =
+            DistScore * 2.0f +
+            DamageScore * 1.0f +
+            CooldownScore * 2.0f +
+            // PriorityScore +
+            Randomness -
+            UsagePenalty;
+		DebugLog(FString::Printf(TEXT("Pattern %s: Total Score = %.2f"), *Pattern.PatternName.ToString(), Score), this);
+
+        // SUGGESTED METRICS TO REMOVE/ADJUST:
+        // - If you want to favor attacks coming off cooldown soon: Score += (1.0f - FMath::Clamp(CooldownLeft/MaxCooldown,0,1))*1.5f;
+        // - If the attack has a special effect and the player is low HP: Score += Pattern.IsFinisher && PlayerHP < 0.2f ? 2.0f : 0.0f;
+
+        if (Score > BestScore)
+        {
+            BestScore = Score;
+            localBestPatternIndex = i;
+        }
+	}
+
+	BestPatternIndex = localBestPatternIndex;
 }

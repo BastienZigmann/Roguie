@@ -97,10 +97,12 @@ struct FAttackPattern
 	float Cooldown = 2.f;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
 	float Damage = 10.f;
-	/** If apply, how far can you attack from */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
-	float Range = 0.f; 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
 	float ChargeTime = 0.f; // If apply	
+	/** If apply, how far can you attack from */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
+	float MaxRange = 0.f; 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
+	float MinRange = 0.f; 
 
 };

@@ -30,7 +30,7 @@ public:
 	float GetMaxHealth() const { return MaxHealth; }
 	float GetHealthPercent() const { return CurrentHealth / MaxHealth; }
 
-	UPROPERTY()
+	UPROPERTY(BlueprintAssignable)
 	FOnDeathSignature OnDeath;
 	UPROPERTY()
 	FOnDamagedSignature OnDamaged;

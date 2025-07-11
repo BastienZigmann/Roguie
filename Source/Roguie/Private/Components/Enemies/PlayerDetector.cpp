@@ -13,11 +13,11 @@ UPlayerDetector::UPlayerDetector()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	PrimaryComponentTick.TickInterval = 0.1f;
+	// PrimaryComponentTick.TickInterval = 0.1f;
 
 	LastKnownPlayerLocation = FVector::ZeroVector;
 
-	// EnableDebug();
+	//EnableDebug();
 }
 
 
@@ -46,15 +46,25 @@ void UPlayerDetector::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 bool UPlayerDetector::IsPlayerInRange()
 {
 	if (!CheckReferences()) return false;
-	float Distance = FVector::Dist(GetPlayerCharacter()->GetActorLocation(), OwningActor->GetActorLocation());
-	return (Distance <= DetectionRadius);
+	return (GetPlayerDistance() <= DetectionRadius);
 }
 
 bool UPlayerDetector::IsPlayerInAttackRange()
 {
 	if (!CheckReferences()) return false;
-	float Distance = FVector::Dist(GetPlayerCharacter()->GetActorLocation(), OwningActor->GetActorLocation());
-	return (Distance <= PlayerHittableDistance);
+	return (GetPlayerDistance() <= PlayerHittableDistance);
+}
+
+float UPlayerDetector::GetPlayerDistance()
+{
+	if (!CheckReferences()) return 0.0f;
+	return FVector::Dist(GetPlayerCharacter()->GetActorLocation(), OwningActor->GetActorLocation());
+}
+
+float UPlayerDetector::GetLastKnownPlayerPositionDistance()
+{
+	if (!CheckReferences()) return 0.0f;
+	return FVector::Dist(LastKnownPlayerLocation, OwningActor->GetActorLocation());
 }
 
 bool UPlayerDetector::HasLineOfSight()
