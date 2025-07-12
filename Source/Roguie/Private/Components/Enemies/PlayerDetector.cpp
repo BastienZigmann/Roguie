@@ -18,6 +18,7 @@ UPlayerDetector::UPlayerDetector()
 	LastKnownPlayerLocation = FVector::ZeroVector;
 
 	//EnableDebug();
+	//EnableDebugTraces();
 }
 
 
@@ -47,12 +48,6 @@ bool UPlayerDetector::IsPlayerInRange()
 {
 	if (!CheckReferences()) return false;
 	return (GetPlayerDistance() <= DetectionRadius);
-}
-
-bool UPlayerDetector::IsPlayerInAttackRange()
-{
-	if (!CheckReferences()) return false;
-	return (GetPlayerDistance() <= PlayerHittableDistance);
 }
 
 float UPlayerDetector::GetPlayerDistance()
@@ -104,29 +99,23 @@ void UPlayerDetector::DetectPlayer()
 	
 	if (IsPlayerInRange())
 	{
-		DebugLog("Player in range, Checking LOS...", this);
+		DebugLog("Player in range, Checking LOS...", this, true);
 			
 		if (HasLineOfSight())
 		{
-			DebugLog("Line of sight to player confirmed!", this);
+			DebugLog("Line of sight to player confirmed!", this, true);
 			bool wasPlayerDetected = bIsPlayerDetectedInRange;
 			bIsPlayerDetectedInRange = true;
 			LastKnownPlayerLocation = GetPlayerCharacter()->GetActorLocation();
-			if (IsPlayerInAttackRange())
-			{
-				DebugLog("Player in attack range", this);
-				OnPlayerUnderMeleeRange.Broadcast();
-				return;
-			}
 
 			if (!wasPlayerDetected)
 			{
-				DebugLog("Player detected in range for the first time", this);
+				DebugLog("Player detected in range for the first time", this, true);
 				OnPlayerFound.Broadcast();
 			}
 			else
 			{
-				DebugLog("Player position updated", this);
+				DebugLog("Player position updated", this, true);
 				OnPlayerPositionUpdate.Broadcast();
 			}
 			return;

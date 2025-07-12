@@ -46,8 +46,6 @@ private:
 	UFUNCTION()
 	void HandlePlayerPositionUpdate();
 	UFUNCTION()
-	void HandlePlayerUnderMeleeRange();
-	UFUNCTION()
 	void HandlePlayerLost();
 	UFUNCTION()
 	void HandleDeath();

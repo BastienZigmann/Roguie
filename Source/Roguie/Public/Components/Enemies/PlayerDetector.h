@@ -30,10 +30,6 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerPositionUpdate OnPlayerPositionUpdate;
 
-	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerUnderMeleeRange);
-	UPROPERTY(BlueprintAssignable)
-	FOnPlayerUnderMeleeRange OnPlayerUnderMeleeRange;
-
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerFound);
 	UPROPERTY(BlueprintAssignable)
 	FOnPlayerFound OnPlayerFound;
@@ -60,7 +56,6 @@ private:
 
 	bool bIsPlayerDetectedInRange = false;
 
-	bool IsPlayerInAttackRange();
 	bool IsPlayerInRange();
 	float GetPlayerDistance();
 	bool HasLineOfSight();

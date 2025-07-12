@@ -3,6 +3,8 @@
 
 #include "Components/Enemies/EnemyMovementComponent.h"
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
+#include "Components/Enemies/EnemyCombatComponent.h"
+#include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include <AIController.h>
@@ -20,7 +22,7 @@ UEnemyMovementComponent::UEnemyMovementComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	// EnableDebug();
+	EnableDebugTraces();
 
 }
 
@@ -129,7 +131,22 @@ void UEnemyMovementComponent::StartChase()
 {
 	if (!OwningActor) return;
 	if (OwningActor->GetController() == nullptr) return;
-	MoveToPlayer();
+	if (!OwningActor->GetCombatComponent()) return;
+	FVector Destination = GetChaseDestination();
+	if (Destination.IsZero())
+	{
+		MoveToPlayer();
+	}
+	else
+	{
+		MoveToLocation(Destination);
+		DebugLog("Starting a chase movement", this, true);
+	}
+}
+
+void UEnemyMovementComponent::UpdateChaseDestination()
+{
+	StartChase();
 }
 
 void UEnemyMovementComponent::StopChase()
@@ -157,6 +174,43 @@ void UEnemyMovementComponent::GoToLastKnownPlayerLocation()
 	MoveToLocation(OwningActor->GetPlayerDetectorComponent()->GetLastKnownPlayerLocation());
 }
 
+const FVector UEnemyMovementComponent::GetChaseDestination() const
+{
+	if (!OwningActor) return FVector::ZeroVector;
+	
+	const UEnemyCombatComponent* CombatComp = OwningActor->GetCombatComponent();
+	const UPlayerDetector* PlayerDetector = OwningActor->GetPlayerDetectorComponent();
+
+	if (!CombatComp || !PlayerDetector) return FVector::ZeroVector;
+	
+	float MinRangeToPlayer = CombatComp->GetNextAttackPatternMinRange();
+	float MaxRangeToPlayer = CombatComp->GetNextAttackPatternMaxRange();
+
+	FVector PlayerLocation = PlayerDetector->GetLastKnownPlayerLocation();
+	FVector ActorLocation = OwningActor->GetActorLocation();
+
+	FVector ToPlayer = PlayerLocation - ActorLocation;
+	float DistanceToPlayer = ToPlayer.Size();
+	FVector DirectionToPlayer = ToPlayer.GetSafeNormal();
+
+	FVector Destination = PlayerLocation;
+
+	if (DistanceToPlayer > MaxRangeToPlayer)
+	{
+		DebugLog("Player is too far, moving towards player", this, true);
+		Destination =  PlayerLocation - DirectionToPlayer * MaxRangeToPlayer; // Move towards the player but stay within max range
+	}
+	else if (DistanceToPlayer < MinRangeToPlayer)
+	{
+		DebugLog("Player is too close, moving away from player", this, true);
+		Destination = PlayerLocation - DirectionToPlayer * MinRangeToPlayer; // Move away from the player to stay within min range
+	}
+
+	DebugTraceLine(GetWorld(), ActorLocation, Destination, FColor::Green, 5.f, 0.f, false);
+
+	return Destination;
+}
+
 void UEnemyMovementComponent::MoveToLocation(const FVector& Location, const float AcceptanceRadius, bool bUsePathfinding)
 {
 	if (!OwningActor) return;
@@ -172,12 +226,12 @@ void UEnemyMovementComponent::MoveToLocation(const FVector& Location, const floa
 		if (bUsePathfinding)
 		{
 			AIController->MoveTo(MoveRequest, &NavPath);
-			DebugLog("Moving to location with pathfinding", this);
+			DebugLog("Moving to location with pathfinding", this, true);
 		}
 		else
 		{
 			AIController->GetPathFollowingComponent()->RequestMove(MoveRequest, NavPath);
-			DebugLog("Moving to location without pathfinding", this);
+			DebugLog("Moving to location without pathfinding", this, true);
 		}
 	}
 	else
@@ -204,12 +258,12 @@ void UEnemyMovementComponent::MoveToPlayer(const float AcceptanceRadius, bool bU
 		if (bUsePathfinding)
 		{
 			AIController->MoveTo(MoveRequest, &NavPath);
-			DebugLog("Moving to location with pathfinding", this);
+			DebugLog("Moving to location with pathfinding", this, true);
 		}
 		else
 		{
 			AIController->GetPathFollowingComponent()->RequestMove(MoveRequest, NavPath);
-			DebugLog("Moving to location without pathfinding", this);
+			DebugLog("Moving to location without pathfinding", this, true);
 		}
 	}
 	else

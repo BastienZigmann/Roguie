@@ -66,7 +66,7 @@ bool UCharacterStateComponent::CanAttack() const
 	return OwningCharacter->GetInventoryComponent()->HaveAnyWeapon() && CurrentState != ECharacterState::Dashing;
 }
 
-void UCharacterStateComponent::EnableDebug()
+void UCharacterStateComponent::EnableDebug(bool detailed)
 {
 	SetComponentTickEnabled(true);
 	bDebugMode = true;

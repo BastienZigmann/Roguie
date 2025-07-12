@@ -16,7 +16,7 @@ UEnemyBehaviorComponent::UEnemyBehaviorComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	//EnableDebug();
+	EnableDebug();
 }
 
 
@@ -34,7 +34,6 @@ void UEnemyBehaviorComponent::BeginPlay()
 	{
 		OwningActor->GetPlayerDetectorComponent()->OnPlayerFound.AddDynamic(this, &UEnemyBehaviorComponent::HandlePlayerFound);
 		OwningActor->GetPlayerDetectorComponent()->OnPlayerPositionUpdate.AddDynamic(this, &UEnemyBehaviorComponent::HandlePlayerPositionUpdate);
-		OwningActor->GetPlayerDetectorComponent()->OnPlayerUnderMeleeRange.AddDynamic(this, &UEnemyBehaviorComponent::HandlePlayerUnderMeleeRange);
 		OwningActor->GetPlayerDetectorComponent()->OnPlayerLost.AddDynamic(this, &UEnemyBehaviorComponent::HandlePlayerLost);
 	}
 
@@ -89,29 +88,12 @@ void UEnemyBehaviorComponent::HandlePlayerPositionUpdate()
 	if (!OwningActor) return;
 	if (!OwningActor->GetEnemyMovementComponent()) return;
 	if (!CanDoAnything()) return;
-	DebugLog("Player position update !", this);
+	DebugLog("Player position update !", this, true);
 
 	if (!IsChasing())
 		TryEnterState(EEnemyState::Chase);
-}
-
-void UEnemyBehaviorComponent::HandlePlayerUnderMeleeRange()
-{
-	if (!OwningActor) return;
-	if (!OwningActor->GetEnemyMovementComponent()) return;
-	if (!CanDoAnything()) return;
-	// If player is under melee range, switch to attack state immediately
-	DebugLog("Player Found close enough to hit !", this);
-	if (OwningActor->GetEnemyMovementComponent()->IsFacingPlayer())
-	{
-		DebugLog("Player is under melee range and facing, switching to Attack state", this);
-		TryEnterState(EEnemyState::Attack);
-	}
-	else
-	{
-		TryEnterState(EEnemyState::Rotate);
-	}
-
+	else 
+		OwningActor->GetEnemyMovementComponent()->UpdateChaseDestination(); // Update chase destination if already chasing
 }
 
 void UEnemyBehaviorComponent::HandlePlayerLost()
@@ -152,8 +134,20 @@ void UEnemyBehaviorComponent::HandleDestinationReached()
 
 	if (IsChasing())
 	{
-		DebugLog("Chase ended, switching to Idle state", this);
-		TryEnterState(EEnemyState::Idle);
+
+		DebugLog("Attack spot reached", this);
+		// TryEnterState(EEnemyState::Idle);
+
+		if (OwningActor->GetEnemyMovementComponent()->IsFacingPlayer())
+		{
+			DebugLog("Player is under attack range and facing, switching to Attack state", this);
+			TryEnterState(EEnemyState::Attack);
+		}
+		else
+		{
+			DebugLog("Player is not facing, switching to Rotate state", this);
+			TryEnterState(EEnemyState::Rotate);
+		}
 	}
 }
 

@@ -3,11 +3,15 @@
 
 #include "Utils/Logger.h"
 
-void FLogger::DebugLog(const FString& Msg, const UObject* Context) const
+void FLogger::DebugLog(const FString& Msg, const UObject* Context, bool isDetailed) const
 {
+    if (isDetailed && !bDetailedMode) return;
 	if (bDebugMode)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s%s"), *GeneratePrefix(Context), *Msg);
+        FString Detailed = "";
+        if (isDetailed)
+            Detailed = FString::Printf(TEXT(" [Detailed] "));
+		UE_LOG(LogTemp, Warning, TEXT("%s%s%s"), *GeneratePrefix(Context), *Detailed, *Msg);
 	}
 }
 

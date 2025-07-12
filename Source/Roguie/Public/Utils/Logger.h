@@ -8,16 +8,18 @@ protected:
 	bool bDebugMode = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug", meta = (AllowPrivateAccess = "true"))
 	bool bDebugTraces = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug", meta = (AllowPrivateAccess = "true"))
+	bool bDetailedMode = false;
 
 public:
-	virtual void EnableDebug() { bDebugMode = true;}
+	virtual void EnableDebug(bool detailed = false) { bDebugMode = true; bDetailedMode = detailed; }
 	virtual void EnableDebugTraces() { bDebugTraces = true; }
 	virtual void DisableDebug() { bDebugMode = false; bDebugTraces = false; }
 	virtual bool IsDebugOn() const { return bDebugMode; }
 	virtual bool IsDebugTracesOn() const { return bDebugTraces; }
 
 	// /!\ Use the macro instead of this !!
-	void DebugLog(const FString& Msg, const UObject* Context = nullptr) const;
+	void DebugLog(const FString& Msg, const UObject* Context = nullptr, bool isDetailed = false) const;
 	void ErrorLog(const FString& Msg, const UObject* Context = nullptr) const;
 
 	virtual void DebugTraces();

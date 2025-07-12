@@ -54,6 +54,7 @@ public:
 
 	// Chase
 	void StartChase();
+	void UpdateChaseDestination();
 	void StopChase();
 	void SetChaseSpeed() { SetSpeed(MovementSpeed); }
 	void GoToLastKnownPlayerLocation();
@@ -75,7 +76,9 @@ private:
 	float MovementSpeed = 100.f;
 	float RotationSpeed = 5.f;
 	void SetSpeed(float speed);
-	void MoveToLocation(const FVector& Location, const float AcceptanceRadius = 100.f, bool bUsePathfinding = true);
+	void MoveToLocation(const FVector& Location, const float AcceptanceRadius = 50.f, bool bUsePathfinding = true);
 	void MoveToPlayer(const float AcceptanceRadius= 100.f, bool bUsePathfinding = true);
+
+	const FVector GetChaseDestination() const;
 
 };

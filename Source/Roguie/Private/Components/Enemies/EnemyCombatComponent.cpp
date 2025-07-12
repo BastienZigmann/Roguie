@@ -20,23 +20,27 @@ void UEnemyCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (OwningActor && OwningActor->GetDataAsset())
-	{
-		AttackPatterns = OwningActor->GetDataAsset()->AttackPatterns;
-		BestPatternIndex = INDEX_NONE;
-		GlobalCooldownDuration = OwningActor->GetDataAsset()->GlobalAttackCooldown;
-		DebugLog(FString::Printf(TEXT("%i attack patterns loaded"), AttackPatterns.Num()), this);
-		for (int32 i = 0; i < AttackPatterns.Num(); ++i)
-		{
-			AttackTypeLastUseMap.FindOrAdd(i) = -FLT_MAX;
-			AttackNumberOfUseMap.FindOrAdd(i) = 0; // Initialize usage count for each attack pattern
-		}
-	}
-	else
+	if (!OwningActor || !OwningActor->GetDataAsset())
 	{
 		ErrorLog(TEXT("OwningActor or DataAsset is not set for EnemyCombatComponent."), this);
 		return;
 	}
+	
+	AttackPatterns = OwningActor->GetDataAsset()->AttackPatterns;
+	BestPatternIndex = INDEX_NONE;
+	GlobalCooldownDuration = OwningActor->GetDataAsset()->GlobalAttackCooldown;
+	DebugLog(FString::Printf(TEXT("%i attack patterns loaded"), AttackPatterns.Num()), this);
+	for (int32 i = 0; i < AttackPatterns.Num(); ++i)
+	{
+		AttackTypeLastUseMap.FindOrAdd(i) = -FLT_MAX;
+		AttackNumberOfUseMap.FindOrAdd(i) = 0; // Initialize usage count for each attack pattern
+	}
+
+	if (OwningActor->GetPlayerDetectorComponent())
+	{
+		OwningActor->GetPlayerDetectorComponent()->OnPlayerPositionUpdate.AddDynamic(this, &UEnemyCombatComponent::HandlePlayerPositionUpdate);
+	}
+	
 	DebugLog("Combat Component Initialized", this);
 }
 
@@ -75,6 +79,7 @@ bool UEnemyCombatComponent::CanAttack(int32 Index)
 		ErrorLog(TEXT("Owning actor is null, cannot check attack availability."), this);
 		return false;
 	}
+
 	if (!AttackPatterns.IsValidIndex(Index))
 	{
 		ErrorLog(FString::Printf(TEXT("Invalid attack pattern index: %d"), Index), this);
@@ -278,5 +283,33 @@ void UEnemyCombatComponent::ComputeNextAttackPattern()
         }
 	}
 
+	LastPatternSelectionTime = GetWorld()->GetTimeSeconds();
 	BestPatternIndex = localBestPatternIndex;
+	DebugLog("Best attack pattern selected: " + GetAttackPatternName(BestPatternIndex), this);
+}
+
+float UEnemyCombatComponent::GetNextAttackPatternMaxRange() const
+{
+	if (AttackPatterns.IsValidIndex(BestPatternIndex))
+	{
+		return AttackPatterns[BestPatternIndex].MaxRange;
+	}
+	return 0.0f;
+}
+
+float UEnemyCombatComponent::GetNextAttackPatternMinRange() const
+{
+	if (AttackPatterns.IsValidIndex(BestPatternIndex))
+	{
+		return AttackPatterns[BestPatternIndex].MinRange;
+	}
+	return 0.0f;
+}
+
+void UEnemyCombatComponent::HandlePlayerPositionUpdate()
+{
+	if (GetWorld()->GetTimeSeconds() > LastPatternSelectionTime + PatternSelectionInterval)
+	{
+		ComputeNextAttackPattern();
+	}
 }

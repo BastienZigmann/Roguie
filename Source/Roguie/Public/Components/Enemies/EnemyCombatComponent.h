@@ -25,6 +25,9 @@ public:
 
 	void HandleMeleeHitNotify();
 
+	float GetNextAttackPatternMaxRange() const;
+	float GetNextAttackPatternMinRange() const;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -48,9 +51,11 @@ private:
 	// --- Attack Pattern Selection ---
 	int32 BestPatternIndex = INDEX_NONE;
 	float LastPatternSelectionTime = 0.0f;
+	float PatternSelectionInterval = 2.f; // Default interval
 	TMap<int32, int> AttackNumberOfUseMap;
 	void ComputeNextAttackPattern();
-	
+	UFUNCTION()
+	void HandlePlayerPositionUpdate();
 
 	void HitOnPlayer(AActor* HitActor, const FAttackPattern& Pattern);
 

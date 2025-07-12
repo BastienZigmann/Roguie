@@ -35,7 +35,7 @@ public:
 	bool CanAttack() const;
 	bool CanDash() const { return CurrentState != ECharacterState::Attacking; }
 
-	void EnableDebug() override;
+	void EnableDebug(bool detailed = false) override;
 	void DisableDebug() override;
 
 protected:
