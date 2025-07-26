@@ -6,7 +6,6 @@
 #include "Components/Enemies/EnemyCombatComponent.h"
 #include "Components/Enemies/PlayerDetector.h"
 #include "Enemies/EnemyBase.h"
-#include "Components/Enemies/PlayerDetector.h"
 #include <AIController.h>
 #include "Navigation/PathFollowingComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -22,6 +21,7 @@ UEnemyMovementComponent::UEnemyMovementComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
+	EnableDebug(true);
 	EnableDebugTraces();
 
 }
@@ -104,7 +104,7 @@ void UEnemyMovementComponent::UpdatePatrolArea()
 void UEnemyMovementComponent::StartPatrol()
 {
 	if (!OwningActor || !OwningActor->GetController()) return;
-
+	DebugLog("Startpatrol Called", this, true);
 	AAIController* AIController = Cast<AAIController>(OwningActor->GetController());
 	if (!AIController) return;
 	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
@@ -179,36 +179,113 @@ const FVector UEnemyMovementComponent::GetChaseDestination() const
 	if (!OwningActor) return FVector::ZeroVector;
 	
 	const UEnemyCombatComponent* CombatComp = OwningActor->GetCombatComponent();
-	const UPlayerDetector* PlayerDetector = OwningActor->GetPlayerDetectorComponent();
+	UPlayerDetector* PlayerDetector = OwningActor->GetPlayerDetectorComponent();
 
 	if (!CombatComp || !PlayerDetector) return FVector::ZeroVector;
 	
-	float MinRangeToPlayer = CombatComp->GetNextAttackPatternMinRange();
-	float MaxRangeToPlayer = CombatComp->GetNextAttackPatternMaxRange();
+	float MinRange = CombatComp->GetNextAttackPatternMinRange();
+	float MaxRange = CombatComp->GetNextAttackPatternMaxRange();
 
 	FVector PlayerLocation = PlayerDetector->GetLastKnownPlayerLocation();
+	if (MinRange == 0 && MaxRange == 0) return PlayerLocation;
 	FVector ActorLocation = OwningActor->GetActorLocation();
 
 	FVector ToPlayer = PlayerLocation - ActorLocation;
 	float DistanceToPlayer = ToPlayer.Size();
 	FVector DirectionToPlayer = ToPlayer.GetSafeNormal();
 
-	FVector Destination = PlayerLocation;
+	float CircleRadius = MaxRange;
+	if (DistanceToPlayer < MinRange)
+		CircleRadius = MinRange;
 
-	if (DistanceToPlayer > MaxRangeToPlayer)
+	// Helper to compute destination at a given angle offset (in radians)
+	auto GetDestinationAtAngle = [&](float AngleRad) -> FVector
 	{
-		DebugLog("Player is too far, moving towards player", this, true);
-		Destination =  PlayerLocation - DirectionToPlayer * MaxRangeToPlayer; // Move towards the player but stay within max range
-	}
-	else if (DistanceToPlayer < MinRangeToPlayer)
+		FRotator Rot(0.f, FMath::RadiansToDegrees(AngleRad), 0.f);
+		FVector RotatedDir = Rot.RotateVector(DirectionToPlayer);
+		FVector Dest = PlayerLocation - RotatedDir * CircleRadius;
+		Dest.Z = PlayerLocation.Z;
+		return Dest;
+	};
+
+	// Check direct line first
+	FVector Destination = GetDestinationAtAngle(0.f);
+	if (CanReachDestination(Destination) && PlayerDetector->HasLineOfSight(Destination))
 	{
-		DebugLog("Player is too close, moving away from player", this, true);
-		Destination = PlayerLocation - DirectionToPlayer * MinRangeToPlayer; // Move away from the player to stay within min range
+		DebugTraceLine(GetWorld(), ActorLocation, Destination, FColor::Green, 5.f, 0.f, false);
+		return Destination;
 	}
+
+	float AngleStepDeg = 5.f;
+	float MaxAngleDeg = 180.0f;
+	const int NumSteps = static_cast<int>(MaxAngleDeg / AngleStepDeg);
+
+	for (int Step = 1; Step <= NumSteps; ++Step)
+	{
+		float AngleRad = FMath::DegreesToRadians(Step * AngleStepDeg);
+
+		// +angle
+		Destination = GetDestinationAtAngle(AngleRad);
+		if (CanReachDestination(Destination) && PlayerDetector->HasLineOfSight(Destination))
+		{
+			DebugTraceLine(GetWorld(), ActorLocation, Destination, FColor::Yellow, 5.f, 0.f, false);
+			return Destination;
+		}
+
+		// -angle
+		Destination = GetDestinationAtAngle(-AngleRad);
+		if (CanReachDestination(Destination) && PlayerDetector->HasLineOfSight(Destination))
+		{
+			DebugTraceLine(GetWorld(), ActorLocation, Destination, FColor::Yellow, 5.f, 0.f, false);
+			return Destination;
+		}
+	}
+
+	// Fallback: go directly toward player at circle radius
+	Destination = GetDestinationAtAngle(0.f);
 
 	DebugTraceLine(GetWorld(), ActorLocation, Destination, FColor::Green, 5.f, 0.f, false);
 
 	return Destination;
+}
+
+bool UEnemyMovementComponent::CanReachDestination(const FVector& Destination) const
+{
+	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	FNavLocation NavLocation;
+	return NavSys && NavSys->ProjectPointToNavigation(Destination, NavLocation);
+}
+
+// Not used
+FVector UEnemyMovementComponent::GetRandomPointOnCircleWithAngleOffset(
+    const FVector& PlayerLocation,
+    float Radius,
+    float AngleCenter, // in radians, e.g. 0 is toward enemy
+    float AngleOffset, // in radians, e.g. PI/6
+    const FVector& EnemyLocation
+) const
+{
+    // Compute the base direction (enemy-player line)
+    FVector ForwardDirection = (EnemyLocation - PlayerLocation).GetSafeNormal2D();
+
+    // Compute min and max angle for the arc
+    float MinAngle = AngleCenter - AngleOffset;
+    float MaxAngle = AngleCenter + AngleOffset;
+
+    // Pick a random angle in the allowed arc
+    float Angle = FMath::FRandRange(MinAngle, MaxAngle);
+
+    // Build a rotation around Z
+    FRotator Rot(0.f, FMath::RadiansToDegrees(Angle), 0.f);
+
+    // Rotate the forward direction by the angle
+    FVector RotatedDirection = Rot.RotateVector(ForwardDirection);
+
+    // Build the destination point
+    FVector Destination = PlayerLocation + RotatedDirection * Radius;
+    Destination.Z = PlayerLocation.Z; // Keep Z level at player height
+
+    return Destination;
 }
 
 void UEnemyMovementComponent::MoveToLocation(const FVector& Location, const float AcceptanceRadius, bool bUsePathfinding)

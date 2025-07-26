@@ -124,7 +124,7 @@ void UEnemyBehaviorComponent::HandleDestinationReached()
 {
 	if (!OwningActor) return;
 	if (!CanDoAnything()) return;
-	DebugLog("Destination Reached", this);
+	DebugLog(FString::Printf(TEXT("Destination Reached %d"), GetWorld()->GetTimeSeconds()), this);
 
 	if (IsPatroling())
 	{
@@ -140,12 +140,12 @@ void UEnemyBehaviorComponent::HandleDestinationReached()
 
 		if (OwningActor->GetEnemyMovementComponent()->IsFacingPlayer())
 		{
-			DebugLog("Player is under attack range and facing, switching to Attack state", this);
+			DebugLog("Player is under attack range and in front, switching to Attack state", this);
 			TryEnterState(EEnemyState::Attack);
 		}
 		else
 		{
-			DebugLog("Player is not facing, switching to Rotate state", this);
+			DebugLog("Not facing player, switching to Rotate state", this);
 			TryEnterState(EEnemyState::Rotate);
 		}
 	}
@@ -211,7 +211,6 @@ void UEnemyBehaviorComponent::TryEnterState(EEnemyState NewState)
 		if (!IsIdling() && !IsPatroling() && !IsRotating()) return;
 		break;
 	case EEnemyState::Rotate:
-		if (!IsIdling()) return;
 		break;
 	case EEnemyState::Attack:
 		if (IsAttacking()) return; // Cannot attack if already attacking

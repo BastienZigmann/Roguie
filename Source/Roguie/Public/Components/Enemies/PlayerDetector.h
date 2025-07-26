@@ -21,7 +21,8 @@ public:
 	void SetDetectionRadius(float NewRadius) { DetectionRadius = NewRadius; }
 
 	UFUNCTION(BlueprintCallable)
-	bool HasSpottedPlayer() const { return bIsPlayerDetectedInRange; }
+	bool HasSpottedPlayer() const { return bIsPlayerDetectedInRange; } // player in range with LOS
+	bool HasLineOfSight(FVector Start = FVector::ZeroVector);
 	FVector GetLastKnownPlayerLocation() const { return LastKnownPlayerLocation; }
 	ARoguieCharacter* GetPlayerCharacter();
 	float GetLastKnownPlayerPositionDistance();
@@ -58,7 +59,6 @@ private:
 
 	bool IsPlayerInRange();
 	float GetPlayerDistance();
-	bool HasLineOfSight();
 	void DetectPlayer();
 
 	bool CheckReferences();

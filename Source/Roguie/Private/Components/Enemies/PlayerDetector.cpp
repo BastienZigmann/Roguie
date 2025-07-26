@@ -62,13 +62,15 @@ float UPlayerDetector::GetLastKnownPlayerPositionDistance()
 	return FVector::Dist(LastKnownPlayerLocation, OwningActor->GetActorLocation());
 }
 
-bool UPlayerDetector::HasLineOfSight()
+bool UPlayerDetector::HasLineOfSight(FVector InStart)
 {
 	if (!CheckReferences()) return false;
 
  	UWorld* World = GetWorld();
     FHitResult HitResult;
     FVector Start = OwningActor->GetActorLocation();
+	if (!InStart.IsZero())
+		Start = InStart; // Use provided start location if not zero
     FVector End = GetPlayerCharacter()->GetActorLocation();
 
     // Ignore the owning actor

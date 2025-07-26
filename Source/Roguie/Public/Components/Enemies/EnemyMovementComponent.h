@@ -76,6 +76,8 @@ private:
 	float MovementSpeed = 100.f;
 	float RotationSpeed = 5.f;
 	void SetSpeed(float speed);
+	bool CanReachDestination(const FVector& Destination) const;
+	FVector GetRandomPointOnCircleWithAngleOffset(const FVector& PlayerLocation, float Radius, float AngleCenter, float AngleOffset, const FVector& EnemyLocation) const;
 	void MoveToLocation(const FVector& Location, const float AcceptanceRadius = 50.f, bool bUsePathfinding = true);
 	void MoveToPlayer(const float AcceptanceRadius= 100.f, bool bUsePathfinding = true);
 
