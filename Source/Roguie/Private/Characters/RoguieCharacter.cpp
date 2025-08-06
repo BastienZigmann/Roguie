@@ -2,7 +2,6 @@
 
 
 #include "Characters/RoguieCharacter.h"
-#include "Components/HealthFlashComponent.h"
 #include "Components/HealthComponent.h"
 #include "Components/Character/CharacterStateComponent.h"
 #include "Components/Character/CharacterCombatComponent.h"
@@ -30,7 +29,6 @@ ARoguieCharacter::ARoguieCharacter()
 	PrimaryActorTick.bCanEverTick = true;
     
     // Components initialization
-    HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
     HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
     CharacterStateComponent = CreateDefaultSubobject<UCharacterStateComponent>(TEXT("CharacterStateComponent"));
     CombatComponent = CreateDefaultSubobject<UCharacterCombatComponent>(TEXT("CombatComponent"));

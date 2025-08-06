@@ -4,26 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "Components/RoguieBaseComponent.h"
-#include "EnemyBaseComponent.generated.h"
+#include "Components/ActorComponent.h"
+#include "ProjectileBaseComponent.generated.h"
 
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class ROGUIE_API UEnemyBaseComponent : public URoguieBaseComponent
+class ROGUIE_API UProjectileBaseComponent : public URoguieBaseComponent
 {
 	GENERATED_BODY()
 
 public:	
 	// Sets default values for this component's properties
-	UEnemyBaseComponent();
+	UProjectileBaseComponent();
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	UPROPERTY()
-	TObjectPtr<class AEnemyBase> OwningActor;
+	TObjectPtr<AActor> OwningActor;
 
-	AEnemyBase* GetOwningEnemy();
+	AActor* GetOwningActor();
 
 public:	
 	// Called every frame

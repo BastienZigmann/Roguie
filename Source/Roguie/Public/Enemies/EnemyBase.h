@@ -53,11 +53,6 @@ protected:
 
 	// Visual components
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<class UHealthFlashComponent> HealthFlashComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Enemy|UI")
-	TObjectPtr<UWidgetComponent> HealthBarComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlayerDetector> PlayerDetectorComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Enemy|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UEnemyMovementComponent> EnemyMovementComponent;

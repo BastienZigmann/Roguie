@@ -19,7 +19,6 @@ class AWeaponSword;
 class USpringArmComponent;
 class UCameraComponent;
 class UHealthComponent;
-class UHealthFlashComponent;
 class UCharacterStateComponent;
 class UCharacterCombatComponent;
 class UCharacterInventoryComponent;
@@ -53,7 +52,6 @@ public:
 
 	void Tick(float DeltaTime);
 
-	UHealthFlashComponent* GetHealthFlashComponent() const { return HealthFlashComponent; }
 	UHealthComponent* GetHealthComponent() const { return HealthComponent; }
 	UCharacterStateComponent* GetCharacterStateComponent() const { return CharacterStateComponent; }
 	UCharacterCombatComponent* GetCombatComponent() const { return CombatComponent; }
@@ -88,8 +86,6 @@ private:
 	TObjectPtr<UCameraComponent> FollowCamera;
 
 	// Custom components
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UHealthFlashComponent> HealthFlashComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UHealthComponent> HealthComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Roguie|Components", meta = (AllowPrivateAccess = "true"))

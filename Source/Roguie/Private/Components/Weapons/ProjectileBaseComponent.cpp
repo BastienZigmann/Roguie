@@ -1,42 +1,44 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Components/Enemies/EnemyBaseComponent.h"
-#include "Enemies/EnemyBase.h"
+#include "Components/Weapons/ProjectileBaseComponent.h"
 
 // Sets default values for this component's properties
-UEnemyBaseComponent::UEnemyBaseComponent()
+UProjectileBaseComponent::UProjectileBaseComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
+
+	// ...
 }
 
 
 // Called when the game starts
-void UEnemyBaseComponent::BeginPlay()
+void UProjectileBaseComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OwningActor = GetOwnerTyped<AEnemyBase>();
+	OwningActor = GetOwnerTyped<AActor>();
 	if (!OwningActor)
 	{
-		ErrorLog(TEXT("Owning enemy is null!"), this);
+		ErrorLog(TEXT("Owning actor is null!"), this);
 		return;
 	}
 	
 }
 
-AEnemyBase* UEnemyBaseComponent::GetOwningEnemy()
+AActor* UProjectileBaseComponent::GetOwningActor()
 {
 	return OwningActor;
 }
 
 
 // Called every frame
-void UEnemyBaseComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UProjectileBaseComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	// ...
 }
 

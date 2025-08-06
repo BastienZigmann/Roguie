@@ -7,7 +7,6 @@
 #include "Components/Enemies/PlayerDetector.h"
 #include "Components/Enemies/EnemyMovementComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/HealthFlashComponent.h"
 #include "Components/Enemies/EnemyAnimManagerComponent.h"
 #include "Components/Enemies/EnemyBehaviorComponent.h"
 #include "Components/HealthComponent.h"
@@ -35,9 +34,6 @@ AEnemyBase::AEnemyBase()
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 
 	HealthComponent->OnDeath.AddDynamic(this, &AEnemyBase::HandleDeath);
-
-	// --- Flashing effect component
-	HealthFlashComponent = CreateDefaultSubobject<UHealthFlashComponent>(TEXT("HealthFlashComponent"));
 
 	//EnableDebug();
 
