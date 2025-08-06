@@ -20,7 +20,7 @@ public:
 	float GetAttackMontagePlaySpeed(int32 Index) const; // For anim montage component to access patterns montages play speed
 
 	bool CanAttack(int32 Index);
-	void StartAttack(int32 Index);
+	void StartAttack();
 	void EndAttackMove();
 
 	void HandleMeleeHitNotify();

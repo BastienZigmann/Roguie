@@ -264,21 +264,7 @@ void UEnemyBehaviorComponent::EnterNewState(EEnemyState NewState)
 		OwningActor->GetEnemyMovementComponent()->StartChase();
 		break;
 	case EEnemyState::Attack:
-		if (OwningActor->GetCombatComponent()->CanAttack(0))
-		{
-			DebugLog("Starting Attack 0", this);
-			OwningActor->GetCombatComponent()->StartAttack(0);
-		}
-		else if (OwningActor->GetCombatComponent()->CanAttack(1))
-		{
-			DebugLog("Starting Attack 1", this);
-			OwningActor->GetCombatComponent()->StartAttack(1);
-		}
-		else
-		{
-			DebugLog("Cannot attack, no valid attack available", this);
-			TryEnterState(EEnemyState::Idle);
-		}
+		OwningActor->GetCombatComponent()->StartAttack();
 		break;
 	case EEnemyState::Stun:
 		break;

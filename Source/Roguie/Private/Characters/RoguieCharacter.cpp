@@ -44,7 +44,7 @@ ARoguieCharacter::ARoguieCharacter()
     FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
     GetMesh()->SetupAttachment(RootComponent);
 	
-    EnableDebug();
+    //EnableDebug();
 }
 
 void ARoguieCharacter::BeginPlay()
