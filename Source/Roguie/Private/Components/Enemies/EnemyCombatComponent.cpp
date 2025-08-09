@@ -13,7 +13,7 @@
 UEnemyCombatComponent::UEnemyCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	// EnableDebug();
+	EnableDebug();
 	// EnableDebugTraces();
 }
 
@@ -29,12 +29,12 @@ void UEnemyCombatComponent::BeginPlay()
 	
 	AttackPatterns = OwningActor->GetDataAsset()->AttackPatterns;
 	LastPatternSelectionTime = -PatternSelectionInterval;
-	BestPatternIndex = INDEX_NONE;
+	BestNextPatternIndex = INDEX_NONE;
 	GlobalCooldownDuration = OwningActor->GetDataAsset()->GlobalAttackCooldown;
 	DebugLog(FString::Printf(TEXT("%i attack patterns loaded"), AttackPatterns.Num()), this);
 	for (int32 i = 0; i < AttackPatterns.Num(); ++i)
 	{
-		AttackTypeLastUseMap.FindOrAdd(i) = -FLT_MAX;
+		PatternLastUseMap.FindOrAdd(i) = -FLT_MAX;
 		AttackNumberOfUseMap.FindOrAdd(i) = 0; // Initialize usage count for each attack pattern
 	}
 
@@ -43,8 +43,19 @@ void UEnemyCombatComponent::BeginPlay()
 		OwningActor->GetPlayerDetectorComponent()->OnPlayerFound.AddDynamic(this, &UEnemyCombatComponent::HandlePlayerPositionUpdate);
 		OwningActor->GetPlayerDetectorComponent()->OnPlayerPositionUpdate.AddDynamic(this, &UEnemyCombatComponent::HandlePlayerPositionUpdate);
 	}
-	
+	// if (OwningActor && OwningActor->GetAnimManagerComponent())
+    // {
+    //     OwningActor->GetAnimManagerComponent()
+    //         ->OnAttackMontageEnd.AddDynamic(this, &UEnemyCombatComponent::OnAttackMontageEndInternal);
+    // }
+
 	DebugLog("Combat Component Initialized", this);
+}
+
+void UEnemyCombatComponent::OnAttackMontageEndInternal()
+{
+    ActivPatternIndex = INDEX_NONE; // active attack ended
+    DebugLog(TEXT("Attack montage ended -> ActivPatternIndex reset"), this, true);
 }
 
 void UEnemyCombatComponent::StartAttackCooldown(int32 Index)
@@ -63,7 +74,7 @@ void UEnemyCombatComponent::StartAttackCooldown(int32 Index)
 		return;
 	}
 
-	AttackTypeLastUseMap[Index] = GetWorld()->GetTimeSeconds();
+	PatternLastUseMap[Index] = GetWorld()->GetTimeSeconds();
 	DebugLog(FString::Printf(TEXT("Started cooldown for attack %s"), *GetAttackPatternName(Index)), this);
 }
 
@@ -74,6 +85,10 @@ void UEnemyCombatComponent::StartGlobalCooldown()
 	DebugLog(TEXT("Started global cooldown."), this);
 }
 
+bool UEnemyCombatComponent::CanAttack()
+{
+	return CanAttack(BestNextPatternIndex);
+}
 
 bool UEnemyCombatComponent::CanAttack(int32 Index)
 {
@@ -115,7 +130,7 @@ bool UEnemyCombatComponent::CanAttack(int32 Index)
 bool UEnemyCombatComponent::IsAttackTypeCooldownOver(int32 Index)
 {
 	if (!OwningActor) return false;
-	float LastUseTime = AttackTypeLastUseMap.FindOrAdd(Index);
+	float LastUseTime = PatternLastUseMap.FindOrAdd(Index);
 	float Cooldown = AttackPatterns[Index].Cooldown;
 	return GetWorld()->GetTimeSeconds() >= LastUseTime + Cooldown;
 }
@@ -147,57 +162,59 @@ float UEnemyCombatComponent::GetAttackMontagePlaySpeed(int32 Index) const
 
 void UEnemyCombatComponent::StartAttack()
 {
-	if (!OwningActor) return;
-
-	if(BestPatternIndex == INDEX_NONE)
+	if (!OwningActor)
 	{
-		ComputeNextAttackPattern();
-	}
-
-	if (!AttackPatterns.IsValidIndex(BestPatternIndex))
-	{
-		ErrorLog(FString::Printf(TEXT("Invalid attack pattern index to start attack: %d"), BestPatternIndex), this);
+		ErrorLog(TEXT("Owning actor is null, cannot start attack."), this);
 		return;
 	}
 
-	CurrentAttackIndex = BestPatternIndex;
-	const FAttackPattern& Pattern = AttackPatterns[BestPatternIndex];
+	DebugLog("Starting attack called...", this);
+
+	if(BestNextPatternIndex == INDEX_NONE)
+	{
+		DebugLog(TEXT("BestNextPatternIndex is INDEX_NONE, computing next attack pattern"), this);
+		ComputeNextAttackPattern();
+	}
+
+	if (BestNextPatternIndex == INDEX_NONE || !AttackPatterns.IsValidIndex(BestNextPatternIndex))
+	{
+		ErrorLog(FString::Printf(TEXT("Invalid attack pattern index to start attack: %d"), BestNextPatternIndex), this);
+		return;
+	}
+
+	if (!CanAttack(BestNextPatternIndex))
+    {
+        DebugLog(TEXT("StartAttack() blocked by cooldowns"), this, true);
+        return;
+    }
+
+	ActivPatternIndex = BestNextPatternIndex;
+
+	const FAttackPattern& Pattern = AttackPatterns[ActivPatternIndex];
 	DebugLog(FString::Printf(TEXT("Starting attack %s"), *GetAttackPatternName()), this);
 
 	if (Pattern.RequireMontage)
 	{
-		if (Pattern.AttackMontage)
-		{
-			OwningActor->GetAnimManagerComponent()->PlayAttackMontage(BestPatternIndex);
-			AttackNumberOfUseMap[BestPatternIndex]++;
-			StartAttackCooldown(BestPatternIndex);
-			StartGlobalCooldown();
-			DebugLog(FString::Printf(TEXT("Attack started for %s"), *GetAttackPatternName(BestPatternIndex)), this);
-		}
+		if (!Pattern.AttackMontage)
+			ErrorLog(FString::Printf(TEXT("Attack montage is not set for attack pattern BestNextPatternIndex: %d"), ActivPatternIndex), this);
 		else
-		{
-			ErrorLog(FString::Printf(TEXT("Attack montage is not set for attack pattern BestPatternIndex: %d"), BestPatternIndex), this);
-			return;
-		}
+			OwningActor->GetAnimManagerComponent()->PlayAttackMontage(ActivPatternIndex);
 	}
-}
-
-void UEnemyCombatComponent::EndAttackMove()
-{
-	if (!OwningActor) return;
-	// Reset the attack state and notify the owning actor
-	DebugLog("Attack move ended.", this);
-	CurrentAttackIndex = INDEX_NONE;
+	
+	DebugLog(FString::Printf(TEXT("Attack started for %s"), *GetAttackPatternName(ActivPatternIndex)), this);
+	AttackNumberOfUseMap[ActivPatternIndex]++;
+	StartAttackCooldown(ActivPatternIndex);
+	StartGlobalCooldown();
 }
 
 void UEnemyCombatComponent::HandleMeleeHitNotify()
 {
 	if (!OwningActor) return;
-	if (CurrentAttackIndex == INDEX_NONE || !AttackPatterns.IsValidIndex(CurrentAttackIndex)) return;
+	if (ActivPatternIndex == INDEX_NONE || !AttackPatterns.IsValidIndex(ActivPatternIndex)) return;
 
 	DebugLog(FString::Printf(TEXT("Handling melee hit notify for %s"), *GetAttackPatternName()), this);
 
-	const FAttackPattern& Pattern = AttackPatterns[CurrentAttackIndex];
+	const FAttackPattern& Pattern = AttackPatterns[ActivPatternIndex];
 	TArray<AActor*> HitActors = FCombatUtils::SphereMeleeHitDetection(OwningActor, Pattern.AttackMeleeHitBoxRange, ARoguieCharacter::StaticClass(), IsDebugTracesOn());
 
 	DebugLog(FString::Printf(TEXT("Hit %d actors with %s"), HitActors.Num(), *GetAttackPatternName()), this);
@@ -209,6 +226,54 @@ void UEnemyCombatComponent::HandleMeleeHitNotify()
 			HitOnPlayer(HitActor, Pattern);
 		}
 	}
+}
+
+void UEnemyCombatComponent::HandleFireProjectileNotify()
+{
+	if (!OwningActor) return;
+	if (ActivPatternIndex == INDEX_NONE || !AttackPatterns.IsValidIndex(ActivPatternIndex)) return;	
+
+	const FAttackPattern& Pattern = AttackPatterns[ActivPatternIndex];
+    if (Pattern.AttackType != EEnemyAttackType::Ranged) return;
+    if (!Pattern.ProjectileClass) { ErrorLog(TEXT("No ProjectileClass set on pattern"), this); return; }
+
+	USceneComponent* SpawnComponent = nullptr;
+	FTransform SpawnTransform;
+
+	if (AActor* OwnerActor = OwningActor)
+	{
+		TArray<USceneComponent*> SceneComps;
+		OwnerActor->GetComponents<USceneComponent>(SceneComps);
+		for (USceneComponent* C : SceneComps)
+		{
+			if (C && C->GetName() == Pattern.ProjectileSpawnComponentName.ToString())
+			{
+				SpawnComponent = C;
+				break;
+			}
+		}
+		if (SpawnComponent) SpawnTransform = SpawnComponent->GetComponentTransform();
+		// flattens pitch and roll
+		const FRotator FlatRot(0.f, SpawnTransform.Rotator().Yaw, 0.f); // Pitch = 0, Roll = 0
+		SpawnTransform.SetRotation(FlatRot.Quaternion());
+	}
+
+	// fallback, spawn on actor location
+    if (!SpawnTransform.IsValid() || SpawnTransform.GetScale3D().IsNearlyZero())
+    {
+        SpawnTransform = FTransform(OwningActor->GetActorRotation(), OwningActor->GetActorLocation());
+    }
+
+	FActorSpawnParameters Params;
+    Params.Owner = OwningActor;
+    Params.Instigator = OwningActor->GetInstigator();
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+    AActor* Projectile = GetWorld()->SpawnActor<AActor>(Pattern.ProjectileClass, SpawnTransform, Params);
+    if (!Projectile) return;
+
+    // Optional: life span
+    if (Pattern.ProjectileLifeSeconds > 0.f) Projectile->SetLifeSpan(Pattern.ProjectileLifeSeconds);
 }
 
 void UEnemyCombatComponent::HitOnPlayer(AActor* HitActor, const FAttackPattern& Pattern)
@@ -224,7 +289,7 @@ FString UEnemyCombatComponent::GetAttackPatternName(int32 Index) const
 	{
 		return AttackPatterns[Index].PatternName.ToString();
 	}
-	return AttackPatterns[CurrentAttackIndex].PatternName.ToString();
+	return AttackPatterns[ActivPatternIndex].PatternName.ToString();
 }
 
 void UEnemyCombatComponent::ComputeNextAttackPattern() 
@@ -254,7 +319,7 @@ void UEnemyCombatComponent::ComputeNextAttackPattern()
         float DamageScore = Pattern.Damage;
 
         // --- Cooldown scoring: the less cooldown left, the better
-        float LastUsed = AttackTypeLastUseMap.Contains(i) ? AttackTypeLastUseMap[i] : -FLT_MAX;
+        float LastUsed = PatternLastUseMap.Contains(i) ? PatternLastUseMap[i] : -FLT_MAX;
         float CooldownLeft = FMath::Max(0.0f, Pattern.Cooldown - (GetWorld()->GetTimeSeconds() - LastUsed));
         float CooldownScore = 1.0f - FMath::Clamp(CooldownLeft / (Pattern.Cooldown + 0.01f), 0.0f, 1.0f); // 1 when ready, 0 when just used
 
@@ -291,24 +356,24 @@ void UEnemyCombatComponent::ComputeNextAttackPattern()
 	}
 
 	LastPatternSelectionTime = GetWorld()->GetTimeSeconds();
-	BestPatternIndex = localBestPatternIndex;
-	DebugLog("Best attack pattern selected: " + GetAttackPatternName(BestPatternIndex), this);
+	BestNextPatternIndex = localBestPatternIndex;
+	DebugLog("Best attack pattern selected: " + GetAttackPatternName(BestNextPatternIndex), this);
 }
 
 float UEnemyCombatComponent::GetNextAttackPatternMaxRange() const
 {
-	if (AttackPatterns.IsValidIndex(BestPatternIndex))
+	if (AttackPatterns.IsValidIndex(BestNextPatternIndex))
 	{
-		return AttackPatterns[BestPatternIndex].MaxRange;
+		return AttackPatterns[BestNextPatternIndex].MaxRange;
 	}
 	return 0.0f;
 }
 
 float UEnemyCombatComponent::GetNextAttackPatternMinRange() const
 {
-	if (AttackPatterns.IsValidIndex(BestPatternIndex))
+	if (AttackPatterns.IsValidIndex(BestNextPatternIndex))
 	{
-		return AttackPatterns[BestPatternIndex].MinRange;
+		return AttackPatterns[BestNextPatternIndex].MinRange;
 	}
 	return 0.0f;
 }

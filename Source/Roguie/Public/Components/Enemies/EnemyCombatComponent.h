@@ -19,11 +19,12 @@ public:
 	UAnimMontage* GetAttackMontage(int32 Index) const; // For anim montage component to access patterns montages
 	float GetAttackMontagePlaySpeed(int32 Index) const; // For anim montage component to access patterns montages play speed
 
+	bool CanAttack();
 	bool CanAttack(int32 Index);
 	void StartAttack();
-	void EndAttackMove();
 
 	void HandleMeleeHitNotify();
+	void HandleFireProjectileNotify();
 
 	float GetNextAttackPatternMaxRange() const;
 	float GetNextAttackPatternMinRange() const;
@@ -37,9 +38,8 @@ private:
 	TArray<FAttackPattern> AttackPatterns;
 
 	// --- Cooldown Management ---
-	// Per-AttackType Cooldowns
-	TMap<int32, float> AttackTypeLastUseMap;
-	int32 CurrentAttackIndex = INDEX_NONE;
+	// Per-Pattern Cooldowns
+	TMap<int32, float> PatternLastUseMap;
 	UPROPERTY(EditAnywhere, Category = "Combat|Cooldowns", meta = (AllowPrivateAccess = "true"))
 	float GlobalCooldownDuration; // TODO use data asset cooldown duration
 	float GlobalCooldownLastAttack = 0.0f;
@@ -47,9 +47,12 @@ private:
 	void StartGlobalCooldown();
 	bool IsGlobalCooldownOver() const;
 	bool IsAttackTypeCooldownOver(int32 Index);
-
+	UFUNCTION()
+    void OnAttackMontageEndInternal();
+	
 	// --- Attack Pattern Selection ---
-	int32 BestPatternIndex = INDEX_NONE;
+	int32 BestNextPatternIndex = INDEX_NONE;
+	int32 ActivPatternIndex = INDEX_NONE;
 	float LastPatternSelectionTime = 0.0f;
 	float PatternSelectionInterval = 2.f; // Default interval
 	TMap<int32, int> AttackNumberOfUseMap;

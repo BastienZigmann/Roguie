@@ -105,4 +105,12 @@ struct FAttackPattern
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|General")
 	float MinRange = 0.f; 
 
+	// -- Range specific
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Range")
+	TSubclassOf<AActor> ProjectileClass = nullptr; 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Range")
+	FName ProjectileSpawnComponentName = FName("ProjectileSpawn");
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Attack|Range")
+	float ProjectileLifeSeconds = 5.f;
+
 };

@@ -164,7 +164,7 @@ bool UEnemyMovementComponent::IsFacingPlayer() const
 	const FVector Forward = OwningActor->GetActorForwardVector();
 
 	const float AngleDiff = FMath::RadiansToDegrees(acosf(FVector::DotProduct(ToPlayer.GetSafeNormal(), Forward)));
-	return AngleDiff <= 10;
+	return AngleDiff <= 5;
 }
 
 void UEnemyMovementComponent::GoToLastKnownPlayerLocation()

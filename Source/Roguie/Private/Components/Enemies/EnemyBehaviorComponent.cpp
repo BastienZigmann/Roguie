@@ -16,7 +16,7 @@ UEnemyBehaviorComponent::UEnemyBehaviorComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-	//EnableDebug();
+	EnableDebug();
 }
 
 
@@ -124,7 +124,7 @@ void UEnemyBehaviorComponent::HandleDestinationReached()
 {
 	if (!OwningActor) return;
 	if (!CanDoAnything()) return;
-	DebugLog(FString::Printf(TEXT("Destination Reached %d"), GetWorld()->GetTimeSeconds()), this);
+	DebugLog(FString::Printf(TEXT("Destination Reached %.2f"), GetWorld()->GetTimeSeconds()), this);
 
 	if (IsPatroling())
 	{
@@ -214,6 +214,7 @@ void UEnemyBehaviorComponent::TryEnterState(EEnemyState NewState)
 		break;
 	case EEnemyState::Attack:
 		if (IsAttacking()) return; // Cannot attack if already attacking
+		if (!OwningActor->GetCombatComponent()->CanAttack()) return;
 		break;
 	default:
 		break;
@@ -222,7 +223,6 @@ void UEnemyBehaviorComponent::TryEnterState(EEnemyState NewState)
 	ExitState(CurrentState);
 	EnterNewState(NewState);
 }
-
 
 void UEnemyBehaviorComponent::EnterNewState(EEnemyState NewState)
 {
@@ -285,11 +285,27 @@ void UEnemyBehaviorComponent::UpdateState()
 {
 	if (!OwningActor) return;
 
-	/*if (IsChasing())
+	DebugLog("Updating state: " + UEnum::GetValueAsString(CurrentState), this);
+	switch (CurrentState)
 	{
-		OwningActor->GetEnemyMovementComponent()->Chase();
-	}*/
-
+	case EEnemyState::Idle:
+		break;
+	case EEnemyState::Patrol:
+		break;
+	case EEnemyState::Chase:
+		break;
+	case EEnemyState::Attack:
+		// OwningActor->GetCombatComponent()->StartAttack();
+		break;
+	case EEnemyState::Stun:
+		break;
+	case EEnemyState::Knockback:
+		break;
+	case EEnemyState::Dead:
+		break;
+	default:
+		break;
+	}
 }
 
 void UEnemyBehaviorComponent::ExitState(EEnemyState ExitingState)

@@ -23,16 +23,17 @@ void UProjectileHitComponent::BeginPlay()
 	
 	if (!OwningActor) return;
 
-	ColliderBox = GetOwnerComponent<UBoxComponent>();
+	ColliderBox = OwningActor->FindComponentByClass<UBoxComponent>();
 	if (!ColliderBox)
-	{
-		ColliderBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ColliderBox"));
-		ColliderBox->SetupAttachment(OwningActor->GetRootComponent());
-		if (!ColliderBox) return;
-	}
+    {
+        ErrorLog(TEXT("ProjectileHitComponent: No UBoxComponent found on owning actor."), this);
+        return;
+    }
 
+	ColliderBox->SetGenerateOverlapEvents(true);
 	ColliderBox->OnComponentBeginOverlap.AddDynamic(this, &UProjectileHitComponent::OnProjectileHit);
-
+	// ignore owner
+	ColliderBox->IgnoreActorWhenMoving(OwningActor, true);
 }
 
 void UProjectileHitComponent::OnProjectileHit(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
