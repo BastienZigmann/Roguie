@@ -21,7 +21,7 @@ UEnemyMovementComponent::UEnemyMovementComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-	//EnableDebug();
+	EnableDebug();
 	//EnableDebugTraces();
 
 }
@@ -184,7 +184,8 @@ const FVector UEnemyMovementComponent::GetChaseDestination() const
 	UPlayerDetector* PlayerDetector = OwningActor->GetPlayerDetectorComponent();
 
 	if (!CombatComp || !PlayerDetector) return FVector::ZeroVector;
-	
+
+	float delta = 50.f;
 	float MinRange = CombatComp->GetNextAttackPatternMinRange();
 	float MaxRange = CombatComp->GetNextAttackPatternMaxRange();
 
@@ -194,11 +195,12 @@ const FVector UEnemyMovementComponent::GetChaseDestination() const
 
 	FVector ToPlayer = PlayerLocation - ActorLocation;
 	float DistanceToPlayer = ToPlayer.Size();
+	DebugLog(FString::Printf(TEXT("Distance to player: %.2f (Min: %.2f, Max: %.2f)"), DistanceToPlayer, MinRange, MaxRange), this);
 	FVector DirectionToPlayer = ToPlayer.GetSafeNormal();
 
-	float CircleRadius = MaxRange;
-	if (DistanceToPlayer < MinRange)
-		CircleRadius = MinRange;
+	float CircleRadius = MaxRange - delta;
+	if (DistanceToPlayer < MinRange) CircleRadius = MinRange + delta;
+	else if (DistanceToPlayer > MinRange && DistanceToPlayer < MaxRange) CircleRadius = DistanceToPlayer;
 
 	// Helper to compute destination at a given angle offset (in radians)
 	auto GetDestinationAtAngle = [&](float AngleRad) -> FVector

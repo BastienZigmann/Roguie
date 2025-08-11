@@ -13,7 +13,7 @@
 UEnemyCombatComponent::UEnemyCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-	EnableDebug();
+	//EnableDebug();
 	// EnableDebugTraces();
 }
 
