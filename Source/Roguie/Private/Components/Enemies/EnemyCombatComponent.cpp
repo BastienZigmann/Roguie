@@ -378,6 +378,15 @@ float UEnemyCombatComponent::GetNextAttackPatternMinRange() const
 	return 0.0f;
 }
 
+EEnemyAttackType UEnemyCombatComponent::GetNextAttackPatternType() const
+{
+	if (AttackPatterns.IsValidIndex(BestNextPatternIndex))
+	{
+		return AttackPatterns[BestNextPatternIndex].AttackType;
+	}
+	return EEnemyAttackType::None;
+}
+
 void UEnemyCombatComponent::HandlePlayerPositionUpdate()
 {
 	if (GetWorld()->GetTimeSeconds() > LastPatternSelectionTime + PatternSelectionInterval)

@@ -28,6 +28,7 @@ public:
 
 	float GetNextAttackPatternMaxRange() const;
 	float GetNextAttackPatternMinRange() const;
+	EEnemyAttackType GetNextAttackPatternType() const;
 
 protected:
 	// Called when the game starts

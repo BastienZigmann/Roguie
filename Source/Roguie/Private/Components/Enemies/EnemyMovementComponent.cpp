@@ -186,6 +186,7 @@ const FVector UEnemyMovementComponent::GetChaseDestination() const
 	if (!CombatComp || !PlayerDetector) return FVector::ZeroVector;
 
 	float delta = 50.f;
+	if (CombatComp->GetNextAttackPatternType() != EEnemyAttackType::Ranged) delta = 0.f;
 	float MinRange = CombatComp->GetNextAttackPatternMinRange();
 	float MaxRange = CombatComp->GetNextAttackPatternMaxRange();
 
