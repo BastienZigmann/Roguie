@@ -21,7 +21,6 @@ void UAnimNotify_EnemyMeleeHit::Notify(USkeletalMeshComponent* MeshComp, UAnimSe
 	{
 		if (UEnemyCombatComponent* CombatComp = Enemy->GetCombatComponent())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Enemy %s hit notify triggered."), *Enemy->GetName());
 			CombatComp->HandleMeleeHitNotify();
 		}
 	}

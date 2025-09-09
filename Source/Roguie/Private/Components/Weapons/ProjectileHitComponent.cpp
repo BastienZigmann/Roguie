@@ -40,8 +40,6 @@ void UProjectileHitComponent::OnProjectileHit(UPrimitiveComponent* OverlappedCom
 {
 	if (OtherActor && OtherActor != OwningActor && Cast<ARoguieCharacter>(OtherActor))
 	{
-		// Handle the hit logic here, e.g., apply damage, spawn effects, etc.
-		UE_LOG(LogTemp, Warning, TEXT("Projectile hit: %s"), *OtherActor->GetName());
 		OwningActor->Destroy();
 	}
 }
