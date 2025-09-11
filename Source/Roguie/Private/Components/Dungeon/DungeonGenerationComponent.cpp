@@ -31,7 +31,8 @@ void UDungeonGenerationComponent::BeginPlay()
 		return; // No data asset found
 	}
 
-	
+	// Validate the map data asset
+	ValidateMapDataAsset();
 }
 
 FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
@@ -119,6 +120,16 @@ FCell UDungeonGenerationComponent::CreateBlueprintCell(FDungeonMap& DungeonMap, 
 
 FRoomBlueprint UDungeonGenerationComponent::SelectRandomRoomBlueprint(ERoomType RoomType)
 {
+	// Validate room pool exists
+	if (!MapElementsDataAsset || MapElementsDataAsset->RoomPool.Num() == 0)
+	{
+		ErrorLog("No room pool found in MapDataAsset! Cannot generate rooms.", this);
+		FRoomBlueprint DefaultRoom;
+		DefaultRoom.RoomType = RoomType;
+		DefaultRoom.RoomName = TEXT("Empty Room - No Pool");
+		return DefaultRoom;
+	}
+
 	// Filter room pool by type
 	TArray<FRoomBlueprint> FilteredRooms;
 	for (const FRoomBlueprint& RoomBlueprint : MapElementsDataAsset->RoomPool)
@@ -144,7 +155,8 @@ FRoomBlueprint UDungeonGenerationComponent::SelectRandomRoomBlueprint(ERoomType 
 	// If still no rooms found, return default empty room
 	if (FilteredRooms.Num() == 0)
 	{
-		DebugLog("No suitable room blueprints found in pool, using default", this);
+		DebugLog(FString::Printf(TEXT("No suitable room blueprints found in pool for type %s, using default"), 
+			*UEnum::GetValueAsString(RoomType)), this);
 		FRoomBlueprint DefaultRoom;
 		DefaultRoom.RoomType = RoomType;
 		DefaultRoom.RoomName = TEXT("Default Room");
@@ -153,6 +165,9 @@ FRoomBlueprint UDungeonGenerationComponent::SelectRandomRoomBlueprint(ERoomType 
 	
 	// Select random room from filtered pool
 	int32 RandomIndex = RandomStream.RandRange(0, FilteredRooms.Num() - 1);
+	DebugLog(FString::Printf(TEXT("Selected room '%s' of type %s from pool"), 
+		*FilteredRooms[RandomIndex].RoomName, 
+		*UEnum::GetValueAsString(FilteredRooms[RandomIndex].RoomType)), this);
 	return FilteredRooms[RandomIndex];
 }
 
@@ -160,12 +175,15 @@ void UDungeonGenerationComponent::ConfigureRoomDoors(FDungeonMap& DungeonMap)
 {
 	DebugLog("Configuring room doors...", this);
 	
+	int32 ConfiguredRooms = 0;
 	for (FCell& Cell : DungeonMap.Cells)
 	{
 		if (!Cell.IsValid()) continue;
 		
 		// Check each direction for adjacent rooms
 		TArray<ECardinalDirection> AllDirections = ECardinalDirectionUtils::GetAllCardinalDirections();
+		int32 ActiveDoors = 0;
+		
 		for (ECardinalDirection Direction : AllDirections)
 		{
 			FIntCoordinate NeighborCoord = Cell.CellCoord.GetNeighbor(Direction);
@@ -173,6 +191,7 @@ void UDungeonGenerationComponent::ConfigureRoomDoors(FDungeonMap& DungeonMap)
 			{
 				// There's an adjacent room, activate the door in this direction
 				Cell.Room.SetDoorActive(Direction, true);
+				ActiveDoors++;
 			}
 			else
 			{
@@ -180,6 +199,47 @@ void UDungeonGenerationComponent::ConfigureRoomDoors(FDungeonMap& DungeonMap)
 				Cell.Room.SetDoorActive(Direction, false);
 			}
 		}
+		
+		ConfiguredRooms++;
+		DebugLog(FString::Printf(TEXT("Room at %s configured with %d active doors"), 
+			*Cell.CellCoord.ToString(), ActiveDoors), this);
 	}
+	
+	DebugLog(FString::Printf(TEXT("Configured doors for %d rooms"), ConfiguredRooms), this);
+}
+
+bool UDungeonGenerationComponent::ValidateMapDataAsset() const
+{
+	if (!MapElementsDataAsset)
+	{
+		UE_LOG(LogTemp, Error, TEXT("MapDataAsset is null"));
+		return false;
+	}
+	
+	if (MapElementsDataAsset->RoomPool.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RoomPool is empty - rooms will be created with no blueprint"));
+	}
+	
+	// Check if we have at least one normal room
+	bool bHasNormalRoom = false;
+	for (const FRoomBlueprint& Room : MapElementsDataAsset->RoomPool)
+	{
+		if (Room.RoomType == ERoomType::Normal)
+		{
+			bHasNormalRoom = true;
+			break;
+		}
+	}
+	
+	if (!bHasNormalRoom && MapElementsDataAsset->RoomPool.Num() > 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("No normal rooms found in room pool - this may cause issues during generation"));
+	}
+	
+	UE_LOG(LogTemp, Log, TEXT("MapDataAsset validation complete: %d rooms in pool, %d normal rooms"), 
+		MapElementsDataAsset->RoomPool.Num(), bHasNormalRoom ? 1 : 0);
+	
+	return true;
 }
 

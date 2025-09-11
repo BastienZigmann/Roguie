@@ -34,6 +34,9 @@ private:
 	FCell CreateBlueprintCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord, ERoomType RoomType = ERoomType::Normal);
 	FRoomBlueprint SelectRandomRoomBlueprint(ERoomType RoomType = ERoomType::Normal);
 	void ConfigureRoomDoors(FDungeonMap& DungeonMap);
+	
+	// Validation methods
+	bool ValidateMapDataAsset() const;
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
