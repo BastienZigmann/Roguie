@@ -48,7 +48,7 @@ FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
 
 	FIntCoordinate currentCellCoord = DungeonMap->GetStartingCellCoord();
 	DebugLog("Starting cell at " + currentCellCoord.ToString(), this);
-	DungeonMap->SetCell(CreateRandomizedCell(*DungeonMap, currentCellCoord, ERoomType::Starting));
+	DungeonMap->SetCell(CreateBlueprintCell(*DungeonMap, currentCellCoord, ERoomType::Starting));
 
 	TArray<FIntCoordinate> pathStack;
 	pathStack.Push(currentCellCoord);
@@ -78,8 +78,6 @@ FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
 		TArray<ECardinalDirection> AvailableDirections = DungeonMap->GetAvailableDirections(currentCellCoord); // Get Empty cells
 		if (AvailableDirections.Num() == 0)
 		{
-			AddCorridorToExistingRooms(*DungeonMap, currentCellCoord, 30); // 30% chance to create a corridor to an existing room
-
 			DebugLog("No available directions", this);
 			if (pathStack.Num() == 0)
 			{
@@ -91,23 +89,17 @@ FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
 			continue;
 		}
 
-		AddCorridorToExistingRooms(*DungeonMap, currentCellCoord, 15);
-
 		int32 RandomDirection = RandomStream.RandRange(0, AvailableDirections.Num() - 1); // Get a random direction from the available directions
 		previousCellCoord = currentCellCoord;
 		currentCellCoord = currentCellCoord.GetNeighbor(AvailableDirections[RandomDirection]);
 		DebugLog(FString::Printf(TEXT("Walked to cell %s, from cell %s"), *currentCellCoord.ToString(), *previousCellCoord.ToString()), this);
 
-		DungeonMap->SetCell(CreateRandomizedCell(*DungeonMap, currentCellCoord));
-		DungeonMap->AddCorridor(previousCellCoord, currentCellCoord);
+		DungeonMap->SetCell(CreateBlueprintCell(*DungeonMap, currentCellCoord));
 		pathStack.Push(currentCellCoord);
 	}
 
-	AddCorridorToExistingRooms(*DungeonMap, DungeonMap->GetStartingCellCoord(), 30); 
-	AddCorridorToExistingRooms(*DungeonMap, DungeonMap->GetStartingCellCoord(), 30); 
-
-	DebugLog("Computing corridors...", this);
-	ComputeCorridors(*DungeonMap);
+	// Configure room doors based on adjacent rooms
+	ConfigureRoomDoors(*DungeonMap);
 
 	DebugLog("Filling map tiles...", this);
 	DungeonMap->FillMapTiles();
@@ -117,178 +109,77 @@ FDungeonMap* UDungeonGenerationComponent::GenerateDungeonMap()
 	return DungeonMap;
 }
 
-FCell UDungeonGenerationComponent::CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord, ERoomType RoomType)
+FCell UDungeonGenerationComponent::CreateBlueprintCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord, ERoomType RoomType)
 {
-	FRoom RandomRoom = ERoomType::Normal == RoomType ? CreateRandomizedRoom() : CreateRandomizedRoom(FMath::Min(5, DungeonMap.NbTilesInCellsX),FMath::Min(5, DungeonMap.NbTilesInCellsY));
-	FCell NewCell = FCell(&DungeonMap, CellCoord, RandomRoom);
-	// TODO add culling
+	FRoomBlueprint SelectedRoomBlueprint = SelectRandomRoomBlueprint(RoomType);
+	FRoom NewRoom = FRoom(RoomType, SelectedRoomBlueprint.RoomBlueprintClass);
+	FCell NewCell = FCell(&DungeonMap, CellCoord, NewRoom);
 	return NewCell;
 }
 
-FRoom UDungeonGenerationComponent::CreateRandomizedRoom(const int32 ForcedSizeX, const int32 ForcedSizeY)
+FRoomBlueprint UDungeonGenerationComponent::SelectRandomRoomBlueprint(ERoomType RoomType)
 {
-	int32 RoomLengthX = ForcedSizeX > 0 ? ForcedSizeX : FMath::Abs(RandomStream.RandRange(2, MapElementsDataAsset->CellNumberOfTilesX));
-	int32 RoomLengthY = ForcedSizeY > 0 ? ForcedSizeY : FMath::Abs(RandomStream.RandRange(2, MapElementsDataAsset->CellNumberOfTilesY));
-	FIntCoordinate RoomPosition = FIntCoordinate(RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesX - RoomLengthX), RandomStream.RandRange(0, MapElementsDataAsset->CellNumberOfTilesY - RoomLengthY));
-	return FRoom(RoomPosition, RoomLengthX, RoomLengthY);
-}
-
-
-void UDungeonGenerationComponent::ComputeCorridors(FDungeonMap& DungeonMap)
-{
-	DebugLog("Computing corridors for the dungeon map...", this);
-	for (FCorridor& Corridor : DungeonMap.Corridors)
+	// Filter room pool by type
+	TArray<FRoomBlueprint> FilteredRooms;
+	for (const FRoomBlueprint& RoomBlueprint : MapElementsDataAsset->RoomPool)
 	{
-		if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell())
+		if (RoomBlueprint.RoomType == RoomType || (RoomType == ERoomType::Normal && RoomBlueprint.RoomType == ERoomType::Normal))
 		{
-			DebugLog("Invalid corridor, skipping", this);
-			continue; // Skip invalid corridors
+			FilteredRooms.Add(RoomBlueprint);
 		}
-		PickCorridorStartAndEndTile(DungeonMap, Corridor);
-		CreateCorridorPath(DungeonMap, Corridor);
 	}
-}
-
-void UDungeonGenerationComponent::PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor) const
-{
-	TArray<FIntCoordinate> PotentialTiles;
-	int32 RandomIndex;
-	// Get potential tiles for the corridor's starting and ending positions
-	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetStartingCell(), Corridor.GeneralDirection);
-	if (PotentialTiles.Num() == 0)
-	{
-		DebugLog("No potential tiles found for corridor starting position", this);
-		return; // No potential tiles found, cannot proceed
-	}
-	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
-	Corridor.SetStartingTile(PotentialTiles[RandomIndex]);
-
-	PotentialTiles.Empty(); // Clear potential tiles for the ending position
-	PotentialTiles = GetPotentialCorridorPassageWay(DungeonMap, *Corridor.GetEndingCell(), ECardinalDirectionUtils::GetOppositeDirection(Corridor.GeneralDirection));
-	if (PotentialTiles.Num() == 0)
-	{
-		DebugLog("No potential tiles found for corridor ending position", this);
-		return; // No potential tiles found, cannot proceed
-	}
-	RandomIndex = RandomStream.RandRange(0, PotentialTiles.Num() - 1);
-	Corridor.SetEndingTile(PotentialTiles[RandomIndex]);
-
-}
-
-TArray<FIntCoordinate> UDungeonGenerationComponent::GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const 
-{
-	// Loop over cell edges until we meet the first room tiles, get the whole line as potential candidate and pick one randomly
-	TArray<FIntCoordinate> PotentialTiles;
-	bool found = false;
-	FIntCoordinate CellBaseTile = Cell.BaseTileCoordinate; 
-	switch (Side)
-	{
-	case ECardinalDirection::North:
-		
-		// horizontal edge
-		for (int y = 0; y < DungeonMap.NbTilesInCellsY; ++y)
-		{
-			for (int x = 0; x < DungeonMap.NbTilesInCellsX; ++x)
-			{
-				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
-				{
-					found = true;
-					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
-				}
-			}
-			if (found)
-				break;
-		}
-		break;
-	case ECardinalDirection::West:
-		for (int x = 0; x < DungeonMap.NbTilesInCellsX ; ++x)
-		{
-			for (int y = 0; y < DungeonMap.NbTilesInCellsY; ++y)
-			{
-				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
-				{
-					found = true;
-					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
-				}
-			}
-			if (found)
-				break;
-		}
-		break;
-	case ECardinalDirection::South:
-		for (int y = DungeonMap.NbTilesInCellsY - 1; y >= 0; --y)
-		{
-			for (int x = 0; x < DungeonMap.NbTilesInCellsX; ++x)
-			{
-				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
-				{
-					found = true;
-					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
-				}
-			}
-			if (found)
-				break;
-		}
-		break;
-	case ECardinalDirection::East:
-		for (int x = DungeonMap.NbTilesInCellsX - 1; x >= 0; --x)
-		{
-			for (int y = 0; y < DungeonMap.NbTilesInCellsY; ++y)
-			{
-				if (Cell.IsTileInRoom(CellBaseTile + FIntCoordinate(x, y))) 
-				{
-					found = true;
-					PotentialTiles.Add(CellBaseTile + FIntCoordinate(x, y));
-				}
-			}
-			if (found)
-				break;
-		}
-		break;
 	
-	default:
-		ErrorLog(TEXT("Invalid direction in PickCorridorStartAndEndTile"), this);
-		break;
-	} 
-	return PotentialTiles;
-}
-
-void UDungeonGenerationComponent::CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor)
-{
-	ECardinalDirection Direction = Corridor.GeneralDirection;
-	FVector2D DisplacementVector = Corridor.StartingTile.GetDisplacementVectorTo(Corridor.EndingTile);
-	FIntCoordinate TargetEndTile = Corridor.EndingTile.GetNeighbor(ECardinalDirectionUtils::GetOppositeDirection(Direction));
-
-	// Ensure the corridor is not in the starting room
-	FIntCoordinate CurrentTile = Corridor.StartingTile.GetNeighbor(Direction);
-	Corridor.AddPathTile(CurrentTile); // Add the first tile to the corridor path
-
-	while (CurrentTile != TargetEndTile)
+	// If no rooms of specific type found, get any normal room
+	if (FilteredRooms.Num() == 0)
 	{
-		Direction = CurrentTile.GetDirectionTo(TargetEndTile);
-		CurrentTile = CurrentTile.GetNeighbor(Direction);
-
-		if (CurrentTile != TargetEndTile)
-			Corridor.AddPathTile(CurrentTile);
-	}
-	Corridor.AddPathTile(TargetEndTile); // Set the ending tile of the corridor
-
-}
-
-bool UDungeonGenerationComponent::AddCorridorToExistingRooms(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCellCoord, int32 Chances)
-{
-	int32 ChanceToCreateCorridor = RandomStream.RandRange(0, 100);
-	if (ChanceToCreateCorridor < Chances)
-	{
-		TArray<ECardinalDirection> ExistingRoomsDirections = DungeonMap.GetExistingRoomsDirection(StartingCellCoord);
-		if (ExistingRoomsDirections.Num() != 0)
+		for (const FRoomBlueprint& RoomBlueprint : MapElementsDataAsset->RoomPool)
 		{
-			int32 RandomDirection = RandomStream.RandRange(0, ExistingRoomsDirections.Num() - 1); // Get a random direction from the existing rooms
-			FIntCoordinate NeighborCellCoord = StartingCellCoord.GetNeighbor(ExistingRoomsDirections[RandomDirection]);
-			// DebugLog(FString::Printf(TEXT("Extra corridor Created from cell %s to cell %s"), *StartingCellCoord.ToString(), *NeighborCellCoord.ToString()), this);
-			DungeonMap.AddCorridor(StartingCellCoord, NeighborCellCoord);
-			return true;
+			if (RoomBlueprint.RoomType == ERoomType::Normal)
+			{
+				FilteredRooms.Add(RoomBlueprint);
+			}
 		}
 	}
-	return false;
+	
+	// If still no rooms found, return default empty room
+	if (FilteredRooms.Num() == 0)
+	{
+		DebugLog("No suitable room blueprints found in pool, using default", this);
+		FRoomBlueprint DefaultRoom;
+		DefaultRoom.RoomType = RoomType;
+		DefaultRoom.RoomName = TEXT("Default Room");
+		return DefaultRoom;
+	}
+	
+	// Select random room from filtered pool
+	int32 RandomIndex = RandomStream.RandRange(0, FilteredRooms.Num() - 1);
+	return FilteredRooms[RandomIndex];
 }
+
+void UDungeonGenerationComponent::ConfigureRoomDoors(FDungeonMap& DungeonMap)
+{
+	DebugLog("Configuring room doors...", this);
+	
+	for (FCell& Cell : DungeonMap.Cells)
+	{
+		if (!Cell.IsValid()) continue;
+		
+		// Check each direction for adjacent rooms
+		TArray<ECardinalDirection> AllDirections = ECardinalDirectionUtils::GetAllCardinalDirections();
+		for (ECardinalDirection Direction : AllDirections)
+		{
+			FIntCoordinate NeighborCoord = Cell.CellCoord.GetNeighbor(Direction);
+			if (DungeonMap.IsCellInMap(NeighborCoord) && DungeonMap.IsOccupied(NeighborCoord))
+			{
+				// There's an adjacent room, activate the door in this direction
+				Cell.Room.SetDoorActive(Direction, true);
+			}
+			else
+			{
+				// No adjacent room, deactivate the door
+				Cell.Room.SetDoorActive(Direction, false);
+			}
+		}
+	}
+}
+

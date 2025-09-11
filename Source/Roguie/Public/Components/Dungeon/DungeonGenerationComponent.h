@@ -31,22 +31,12 @@ protected:
 
 private:
 
-	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord,ERoomType RoomType = ERoomType::Normal);
-	FRoom CreateRandomizedRoom(const int32 ForcedSizeX = 0, const int32 ForcedSizeY = 0);
-	
-	void ComputeCorridors(FDungeonMap& DungeonMap);
-	ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
-	void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor) const;
-	TArray<FIntCoordinate> GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const ;
-	void CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor);
-	// Given a percentage of chances to happen, return true if a corridor has been created to connect the room to another adjacent existing room. To avoid backtracking
-	bool AddCorridorToExistingRooms(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCellCoord, int32 Chances);
+	FCell CreateBlueprintCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord, ERoomType RoomType = ERoomType::Normal);
+	FRoomBlueprint SelectRandomRoomBlueprint(ERoomType RoomType = ERoomType::Normal);
+	void ConfigureRoomDoors(FDungeonMap& DungeonMap);
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;
 	FRandomStream RandomStream;
-
-	TSet<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord, const FDungeonMap& DungeonMap) const;
-	ECardinalDirection GetRandomDirection() const;
 
 };

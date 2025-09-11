@@ -30,60 +30,7 @@ FString ECardinalDirectionUtils::GetDirectionString(const ECardinalDirection& Di
     }
 }
 
-// **************************************
-// ************ Corridors ***************
-// **************************************
 
-FCorridor::FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd)
-    : ParentMap(InParentMap), StartingCellCoord(InStart), EndingCellCoord(InEnd)
-{
-    if (!ParentMap)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor created with null ParentMap!"));
-        return;
-    }
-    StartingTile = FIntCoordinate::ZeroCoord;
-    EndingTile = FIntCoordinate::ZeroCoord;
-    GeneralDirection = StartingCellCoord.GetDirectionTo(EndingCellCoord);
-}
-
-const FCell* FCorridor::GetStartingCell() const
-{
-    return ParentMap ? ParentMap->GetCell(StartingCellCoord) : nullptr;
-}
-
-const FCell* FCorridor::GetEndingCell() const
-{
-    return ParentMap ? ParentMap->GetCell(EndingCellCoord) : nullptr;
-}
-
-void FCorridor::AddPathTile(FIntCoordinate Tile)
-{
-    const FCell* StartingCell = GetStartingCell();
-    const FCell* EndingCell = GetEndingCell();
-
-    if (!StartingCell || !EndingCell)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting or Ending cell is not set."));
-        return; // Handle uninitialized corridor
-    }
-    if (StartingTile == FIntCoordinate::ZeroCoord || EndingTile == FIntCoordinate::ZeroCoord)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting or Ending tile is not set."));
-        return; // Handle uninitialized corridor tiles
-    }
-    if (StartingCell == EndingCell || StartingTile == EndingTile)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting and Ending cell/tiles are the same."));
-        return; // Handle invalid corridor
-    }
-    if (PathTiles.Contains(Tile))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Tile %s already exists in corridor."), *Tile.ToString());
-        return; // Tile already exists in corridor
-    }
-    PathTiles.Add(Tile);
-}
 
 // **************************************
 // ************ Tiles *******************
@@ -106,88 +53,48 @@ FTile::FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileT
 // ***************************************
 // ************ Rooms ********************
 // ***************************************
-bool FRoom::IsAdjacentTo(const FRoom& Other) const
+
+void FRoom::SetDoorActive(ECardinalDirection Direction, bool bActive)
 {
-    // Get Direction, and check rooms boundaries to be along the edge.
-    // If it is, check overlapping coordinates.
-    if (!ParentCell || !Other.ParentCell)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Parent cells are not set."));
-        return false; // Handle uninitialized parent cells
-    }
-
-    // If rooms are in the same cell, they can't be adjacent in the way we define adjacency
-    if (ParentCell->CellCoord == Other.ParentCell->CellCoord)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Both rooms are in the same cell [%d,%d], which is invalid."), 
-            ParentCell->CellCoord.x, ParentCell->CellCoord.y);
-        return false;
-    }
-
-    ECardinalDirection Direction = ParentCell->CellCoord.GetDirectionTo(Other.ParentCell->CellCoord);
-    if (ParentCell->CellCoord.GetManhattanDistance(Other.ParentCell->CellCoord) != 1)
-    {
-        // Cells must be immediate neighbors
-        return false;
-    }
-    // Calculate global tile coordinates for both rooms
-    int32 CellSizeX = ParentCell->ParentMap->NbTilesInCellsX;
-    int32 CellSizeY = ParentCell->ParentMap->NbTilesInCellsY;
-    
-    // Get room boundaries in global tile coordinates
-    FIntCoordinate ThisRoomStart = Position + ParentCell->BaseTileCoordinate;
-    FIntCoordinate ThisRoomEnd = ThisRoomStart + FIntCoordinate(LengthX, LengthY);
-    
-    FIntCoordinate OtherRoomStart = Other.Position + Other.ParentCell->BaseTileCoordinate;
-    FIntCoordinate OtherRoomEnd = OtherRoomStart + FIntCoordinate(Other.LengthX, Other.LengthY);
-    
-    // Check for adjacency based on direction
     switch (Direction)
     {
-        case ECardinalDirection::North:
-            // This room is below Other room, check vertical adjacency and horizontal overlap
-            if (ThisRoomStart.y == OtherRoomEnd.y &&  // Vertical adjacency
-                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::East:
-            // This room is left of Other room, check horizontal adjacency and vertical overlap
-            if (ThisRoomEnd.x == OtherRoomStart.x &&  // Horizontal adjacency
-                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::South:
-            // This room is above Other room, check vertical adjacency and horizontal overlap
-            if (ThisRoomEnd.y == OtherRoomStart.y &&  // Vertical adjacency
-                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::West:
-            // This room is right of Other room, check horizontal adjacency and vertical overlap
-            if (ThisRoomStart.x == OtherRoomEnd.x &&  // Horizontal adjacency
-                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
-            {
-                return true;
-            }
+        case ECardinalDirection::North: bNorthDoorActive = bActive; break;
+        case ECardinalDirection::East:  bEastDoorActive = bActive; break;
+        case ECardinalDirection::South: bSouthDoorActive = bActive; break;
+        case ECardinalDirection::West:  bWestDoorActive = bActive; break;
+        default:
+            UE_LOG(LogTemp, Error, TEXT("FRoom::SetDoorActive: Invalid direction"));
             break;
     }
-    
-    // If we get here, the rooms are not adjacent
-    return false;
+}
+
+bool FRoom::IsDoorActive(ECardinalDirection Direction) const
+{
+    switch (Direction)
+    {
+        case ECardinalDirection::North: return bNorthDoorActive;
+        case ECardinalDirection::East:  return bEastDoorActive;
+        case ECardinalDirection::South: return bSouthDoorActive;
+        case ECardinalDirection::West:  return bWestDoorActive;
+        default:
+            UE_LOG(LogTemp, Error, TEXT("FRoom::IsDoorActive: Invalid direction"));
+            return false;
+    }
 }
 
 FVector FRoom::GetWorldPositionCenter() const 
 {
-    return ParentCell->GetFirstTileWorldPosition() + ((Position.ToFVector() + FVector(LengthX / 2, LengthY / 2, 0.0)) * ParentCell->ParentMap->TileSize); 
+    if (!ParentCell || !ParentCell->ParentMap)
+    {
+        return FVector::ZeroVector;
+    }
+    
+    // Center of the cell in world coordinates
+    FVector CellCenter = ParentCell->GetFirstTileWorldPosition();
+    CellCenter.X += (ParentCell->ParentMap->NbTilesInCellsX * ParentCell->ParentMap->TileSize) / 2.0f;
+    CellCenter.Y += (ParentCell->ParentMap->NbTilesInCellsY * ParentCell->ParentMap->TileSize) / 2.0f;
+    
+    return CellCenter;
 }
 
 
@@ -227,27 +134,19 @@ FTile& FCell::GetBaseTile()
 bool FCell::IsTileInRoom(const FIntCoordinate& Coord) const
 {
     if (!ParentMap) return false; // If no parent map, cannot be in room
-    if (!Room.ParentCell || Room.LengthX <= 0 || Room.LengthY <= 0)
+    if (!Room.ParentCell)
     {
-        UE_LOG(LogTemp, Error, TEXT("FCell::IsTileInRoom: Invalid room dimensions or parent cell."));
+        UE_LOG(LogTemp, Error, TEXT("FCell::IsTileInRoom: Invalid room parent cell."));
         return false; // Handle invalid room
     }
+    
     // Check if it's the good cell
     FIntCoordinate DivCoord(Coord.x / ParentMap->NbTilesInCellsX, Coord.y / ParentMap->NbTilesInCellsY);
     if (DivCoord != CellCoord)
         return false; // Tile is not in this cell
 
-    
-    // Check if the tile's coordinates are within the room's boundaries
-    FIntCoordinate RoomStart = Room.Position;
-    FIntCoordinate RoomEnd = RoomStart + FIntCoordinate(Room.LengthX, Room.LengthY);
-
-    
-    FIntCoordinate ModCoord = Coord % FIntCoordinate(ParentMap->NbTilesInCellsX, ParentMap->NbTilesInCellsY);
-
-    
-    return (ModCoord.x >= RoomStart.x && ModCoord.x < RoomEnd.x &&
-            ModCoord.y >= RoomStart.y && ModCoord.y < RoomEnd.y);
+    // For blueprint rooms, we assume the entire cell is the room
+    return true;
 }
 
 bool FCell::IsTileInRoom(const FTile& Tile) const
@@ -383,36 +282,7 @@ void FDungeonMap::FillCellTiles(const FCell& Cell)
     }
 }
 
-void FDungeonMap::FillCorridorTiles(const FCorridor& Corridor)
-{
-    if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell() || Corridor.PathTiles.Num() == 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FillCorridorTiles: Corridor is not properly initialized."));
-        return; // Handle uninitialized corridor
-    }
 
-    for (const FIntCoordinate& PathTile : Corridor.PathTiles)
-    {
-        int32 TileIndex = GetTileIndex(PathTile);
-        if (TileIndex >= 0 && TileIndex < Tiles.Num())
-        {
-            FTile newTile = FTile(this, PathTile, FTileType::Corridor);
-            Tiles[TileIndex] = newTile;
-        }
-    }   
-    int index = GetTileIndex(Corridor.StartingTile);
-    if (index >= 0 && index < Tiles.Num())
-    {
-        Tiles[index].bHasDoor = true;
-        Tiles[index].DoorDirections.Add(Corridor.GeneralDirection);
-    }
-    index = GetTileIndex(Corridor.EndingTile);
-    if (index >= 0 && index < Tiles.Num())
-    {
-        Tiles[index].bHasDoor = true;
-        Tiles[index].DoorDirections.Add(ECardinalDirectionUtils::GetOppositeDirection(Corridor.GeneralDirection));
-    }
-}
 
 // To Call at the end of the generation
 void FDungeonMap::FillMapTiles()
@@ -424,11 +294,6 @@ void FDungeonMap::FillMapTiles()
         {
             FillCellTiles(Cell);
         }
-    }
-
-    for (const FCorridor& Corridor : Corridors)
-    {
-        FillCorridorTiles(Corridor);
     }
 }
 
@@ -483,12 +348,3 @@ FColor FDungeonMap::GetDebugColor(const FCell& Cell) const
     return FColor::Black;
 }
 
-void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord)
-{
-    if (StartingCellCoord == EndingCellCoord) return; // No corridor needed if start and end are the same
-    // check if rooms are against each other
-    if (GetCell(StartingCellCoord)->Room.IsAdjacentTo(GetCell(EndingCellCoord)->Room) ) return;
-
-    FCorridor NewCorridor(this, StartingCellCoord, EndingCellCoord);
-    Corridors.Add(NewCorridor);
-}

@@ -164,42 +164,14 @@ const FDoubleCoordinate FDoubleCoordinate::ZeroCoord(0.0, 0.0);
 // ******** Map Types *******************
 // **************************************
 
-USTRUCT()
-struct ROGUIE_API FCorridor
-{
-	GENERATED_BODY()
 
-	FDungeonMap* ParentMap; // Pointer to the map this corridor belongs to
-	ECardinalDirection GeneralDirection; // Direction of the corridor
-	FIntCoordinate StartingCellCoord; // Cells where corridor starts IN THE MAP
-	FIntCoordinate EndingCellCoord; // Cells where corridor ends IN THE MAP
-	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE MAP
-	TSet<FIntCoordinate> PathTiles; // Tiles in the corridor IN THE MAP
-
-	FCorridor() : FCorridor(nullptr, FIntCoordinate::ZeroCoord, FIntCoordinate::ZeroCoord) { }
-	FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd);
-
-	const FCell* GetStartingCell() const;
-	const FCell* GetEndingCell() const;
-
-	void SetStartingTile(const FIntCoordinate& Tile) { StartingTile = Tile; }
-	void SetEndingTile(const FIntCoordinate& Tile) { EndingTile = Tile; }
-	void AddPathTile(FIntCoordinate Tile);
-	FString ToString() const
-	{
-		return FString::Printf(TEXT("Corridor from Cell %s to Cell %s, Tiles Values %s to %s with %d path tiles"), 
-			*StartingCellCoord.ToString(), *EndingCellCoord.ToString(), *StartingTile.ToString(), *EndingTile.ToString(), PathTiles.Num());
-	}
-
-};
 
 UENUM()
 enum class FTileType : uint8
 {
 	Empty       UMETA(DisplayName = "Empty"),
 	Banned      UMETA(DisplayName = "Banned"),
-	Room        UMETA(DisplayName = "Room"),
-	Corridor    UMETA(DisplayName = "Corridor")
+	Room        UMETA(DisplayName = "Room")
 };
 
 
@@ -242,29 +214,74 @@ enum class ERoomType : uint8
 	Secret      UMETA(DisplayName = "Secret")
 };
 
+// Blueprint room data for pre-designed rooms
+USTRUCT(BlueprintType)
+struct ROGUIE_API FRoomBlueprint
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
+	TSubclassOf<AActor> RoomBlueprintClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
+	ERoomType RoomType = ERoomType::Normal;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room")
+	FString RoomName = TEXT("Unnamed Room");
+
+	// Each room has doors in all 4 directions - room manages which ones are active
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Doors")
+	bool bHasNorthDoor = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Doors")
+	bool bHasEastDoor = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Doors")
+	bool bHasSouthDoor = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Doors")
+	bool bHasWestDoor = true;
+};
+
 USTRUCT()
 struct ROGUIE_API FRoom
 {
 	GENERATED_BODY()
 
 	FCell* ParentCell; 
-	FIntCoordinate Position; // Position of the room in the Cell. 
-	int32 LengthX; // Number of tiles in the room on X axis
-	int32 LengthY; // Number of tiles in the room on Y axis
 	ERoomType RoomType;
+	
+	// Reference to the blueprint used for this room
+	TSubclassOf<AActor> RoomBlueprintClass = nullptr;
+	
+	// Spawned room actor
+	TObjectPtr<AActor> SpawnedRoomActor = nullptr;
 
-	FRoom() : FRoom(FIntCoordinate::ZeroCoord, 5, 5) { }
-	FRoom(const FIntCoordinate& InPosition, int32 InLengthX, int32 InLengthY) : Position(InPosition), LengthX(InLengthX), LengthY(InLengthY) { }
+	// Door states for each direction
+	bool bNorthDoorActive = false;
+	bool bEastDoorActive = false;
+	bool bSouthDoorActive = false;
+	bool bWestDoorActive = false;
+
+	FRoom() : ParentCell(nullptr), RoomType(ERoomType::Normal) { }
+	FRoom(ERoomType InRoomType, TSubclassOf<AActor> InBlueprintClass = nullptr) 
+		: ParentCell(nullptr), RoomType(InRoomType), RoomBlueprintClass(InBlueprintClass) { }
 
 	void SetParentCell(FCell* InParentCell) { ParentCell = InParentCell; }
 	void SetType(ERoomType InRoomType) { RoomType = InRoomType; }
+	void SetBlueprintClass(TSubclassOf<AActor> InBlueprintClass) { RoomBlueprintClass = InBlueprintClass; }
 
-	bool IsAdjacentTo(const FRoom& Other) const;
+	// Set door active state for a specific direction
+	void SetDoorActive(ECardinalDirection Direction, bool bActive);
+	bool IsDoorActive(ECardinalDirection Direction) const;
+
 	FVector GetWorldPositionCenter() const;
 
 	inline FString ToString() const
 	{
-		return FString::Printf(TEXT("Room at %s with size (%d, %d) of type %s"), *Position.ToString(), LengthX, LengthY, *UEnum::GetValueAsString(RoomType));
+		return FString::Printf(TEXT("Room of type %s with blueprint %s"), 
+			*UEnum::GetValueAsString(RoomType), 
+			RoomBlueprintClass ? *RoomBlueprintClass->GetName() : TEXT("None"));
 	}
 
 };
@@ -315,7 +332,6 @@ struct ROGUIE_API FDungeonMap
 	// From Generation
 	TArray<FTile> Tiles;
 	TArray<FCell> Cells; // Cells in this Map
-	TArray<FCorridor> Corridors; // todo
 	TBitArray<> OccupiedCells; // Cells with rooms
 	TBitArray<> BannedCells; // Cells forbidden
 
@@ -395,13 +411,11 @@ struct ROGUIE_API FDungeonMap
 		return TileCoord.x + TileCoord.y * (NbCellsX * NbTilesInCellsX);
 	}
 
-	// Corridor management
-	void AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord);
+
 
 private:
-	// Not to call alone, will erase corridors
+	// Room tile management
 	void FillCellTiles(const FCell& Cell);
-	void FillCorridorTiles(const FCorridor& Corridor);
 
 	// Get Tile Index in array
 	int32 GetTileIndex(const FTile& Tile) const

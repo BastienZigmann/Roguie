@@ -60,4 +60,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
 	TArray<FMapElement> Doors;
 
+	// Room pool for random selection during generation
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Room Generation")
+	TArray<FRoomBlueprint> RoomPool;
+
 };
