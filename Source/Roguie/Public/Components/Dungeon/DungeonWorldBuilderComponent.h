@@ -10,6 +10,7 @@
 #include "DungeonWorldBuilderComponent.generated.h"
 
 class UMapDataAsset;
+class ADoor;
 
 /**
  * Component responsible for spawning the dungeon in the level
@@ -41,6 +42,7 @@ private:
 
 	TArray<ECardinalDirection> GetDoorsDirections(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord);
 	TArray<ECardinalDirection> GetWallDirection(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, TSet<FTileType> ToWallFilter, const TSet<ECardinalDirection>& ExcludeDirections);
+	bool IsTileOnCellEdge(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, ECardinalDirection Direction);
 
 	FTransform GetTileOffset(const FIntCoordinate& TileCoord);
 
@@ -51,6 +53,9 @@ private:
 	void SpawnTileDoors(FTransform TileTransform, const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
 	void SpawnTileWalls(FTransform TileTransform,  const TArray<ECardinalDirection>& Directions = TArray<ECardinalDirection>());
 	void SpawnMapElement(const FMapElement* Element, const FTransform& Transform);
+
+	void SpawnRoomBlueprints(const FDungeonMap& DungeonMap);
+	void ConfigureRoomDoors(AActor* RoomActor, const FRoom& Room);
 
 	void SetupNavMesh(const FDungeonMap& DungeonMap);
 	void AddNavMesh(FVector Location, FVector Extent, FRotator Rotation = FRotator::ZeroRotator);

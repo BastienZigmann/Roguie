@@ -5,7 +5,9 @@
 #include "Core/Data/DataAssets/Map/MapDataAsset.h"
 #include "Core/Types/MapTypes.h"
 #include "DungeonGeneration/MapGenerator.h"
+#include "DungeonGeneration/Door.h"
 #include "Engine/StaticMeshActor.h"
+#include "Kismet/GameplayStatics.h"
 #include <NavMesh/NavMeshBoundsVolume.h>
 #include <NavigationSystem.h>
 #include "Components/BrushComponent.h"
@@ -47,6 +49,9 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
     RandomStream.Initialize(OwningActor->GetMapSeed());
 	const FDungeonMap& DungeonMap = OwningActor->GetDungeonMap();
 
+    // First, spawn the actual room blueprints
+    SpawnRoomBlueprints(DungeonMap);
+
 	for (int32 x = 0; x < DungeonMap.Tiles.Num(); x++)
 	{
         const FTile& DungeonMapTile = DungeonMap.Tiles[x];
@@ -66,14 +71,6 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
             Directions = GetWallDirection(DungeonMap, DungeonMapTile.TileCoord, { FTileType::Room }, TSet<ECardinalDirection>(Directions));
             SpawnTileWalls(TileTransform, Directions);
             break;
-            
-            case FTileType::Corridor:
-            // Code to build corridor
-            SpawnTileFloor(TileTransform);
-            Directions = GetWallDirection(DungeonMap, DungeonMapTile.TileCoord, { FTileType::Corridor, FTileType::Room }, TSet<ECardinalDirection>(Directions));
-            SpawnTileWalls(TileTransform, Directions);
-            break;
-
 
         default:
             break;
@@ -103,28 +100,55 @@ void UDungeonWorldBuilderComponent::BuildDungeon()
                 FVector(MapElementsDataAsset->TileSize, MapElementsDataAsset->TileSize, 0.0f),
                 color, 1.0f, 5.0f, true);
         }
-        for (const FCorridor& Corridor : DungeonMap.Corridors)
-        {
-            DebugLog("Tracing Corridor: " + Corridor.ToString(), this);
-            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.StartingTile).GetLocation() + FVector(0,0,15), GetTileOffset(Corridor.StartingTile).GetRotation().Rotator(),
-                FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Green, 1.0f, 5.0f, true);
-            DebugTraceRectangle(GetWorld(), GetTileOffset(Corridor.EndingTile).GetLocation() + FVector(0,0,20), GetTileOffset(Corridor.EndingTile).GetRotation().Rotator(),
-                FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Red, 1.0f, 5.0f, true);
-            for (const FIntCoordinate& PathTile : Corridor.PathTiles)
-            {
-                DebugTraceRectangle(GetWorld(), GetTileOffset(PathTile).GetLocation() + FVector(0,0,10), GetTileOffset(PathTile).GetRotation().Rotator(),
-                    FVector(MapElementsDataAsset->TileSize / 2.0f, MapElementsDataAsset->TileSize / 2.0f, 0.0f), FColor::Blue, 1.0f, 5.0f, true);
-            }
-        }
     }
 }
 
 TArray<ECardinalDirection> UDungeonWorldBuilderComponent::GetDoorsDirections(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord)
 {
-    const FTile& Tile = DungeonMap.Tiles[DungeonMap.GetTileIndex(TileCoord)];
-    if (!Tile.HasDoor())
-        return TArray<ECardinalDirection>(); // No doors in this tile
-    return Tile.DoorDirections;
+    // Find the cell containing this tile
+    FCell* Cell = const_cast<FDungeonMap&>(DungeonMap).GetCellFromTile(DungeonMap.Tiles[DungeonMap.GetTileIndex(TileCoord)]);
+    if (!Cell || !Cell->IsValid())
+    {
+        return TArray<ECardinalDirection>(); // No doors if cell is invalid
+    }
+
+    TArray<ECardinalDirection> DoorDirections;
+    
+    // Check each direction to see if the room has an active door
+    for (ECardinalDirection Direction : ECardinalDirectionUtils::GetAllCardinalDirections())
+    {
+        if (Cell->Room.IsDoorActive(Direction))
+        {
+            // Check if this tile is on the edge of the cell in the door direction
+            if (IsTileOnCellEdge(DungeonMap, TileCoord, Direction))
+            {
+                DoorDirections.Add(Direction);
+            }
+        }
+    }
+    
+    return DoorDirections;
+}
+
+bool UDungeonWorldBuilderComponent::IsTileOnCellEdge(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, ECardinalDirection Direction)
+{
+    // Get tile position within its cell
+    FIntCoordinate CellCoord(TileCoord.x / DungeonMap.NbTilesInCellsX, TileCoord.y / DungeonMap.NbTilesInCellsY);
+    FIntCoordinate TileInCell(TileCoord.x % DungeonMap.NbTilesInCellsX, TileCoord.y % DungeonMap.NbTilesInCellsY);
+    
+    switch (Direction)
+    {
+        case ECardinalDirection::North:
+            return TileInCell.y == 0; // Top edge of cell
+        case ECardinalDirection::East:
+            return TileInCell.x == DungeonMap.NbTilesInCellsX - 1; // Right edge of cell
+        case ECardinalDirection::South:
+            return TileInCell.y == DungeonMap.NbTilesInCellsY - 1; // Bottom edge of cell
+        case ECardinalDirection::West:
+            return TileInCell.x == 0; // Left edge of cell
+        default:
+            return false;
+    }
 }
 
 TArray<ECardinalDirection> UDungeonWorldBuilderComponent::GetWallDirection(const FDungeonMap& DungeonMap, const FIntCoordinate& TileCoord, TSet<FTileType> Filter, const TSet<ECardinalDirection>& ExcludeDirections)
@@ -341,5 +365,95 @@ void UDungeonWorldBuilderComponent::AddNavMesh(FVector Location, FVector Extent,
     {
         NavSys->OnNavigationBoundsUpdated(NavMeshVolume);
         NavSys->Build();
+    }
+}
+
+void UDungeonWorldBuilderComponent::SpawnRoomBlueprints(const FDungeonMap& DungeonMap)
+{
+    DebugLog("Spawning room blueprints...", this);
+    
+    for (const FCell& Cell : DungeonMap.Cells)
+    {
+        if (!Cell.IsValid() || !Cell.Room.RoomBlueprintClass)
+        {
+            continue; // Skip invalid cells or cells without blueprint
+        }
+        
+        // Calculate room spawn position (center of cell)
+        FVector SpawnLocation = Cell.Room.GetWorldPositionCenter();
+        FRotator SpawnRotation = FRotator::ZeroRotator;
+        
+        // Spawn the room blueprint
+        AActor* SpawnedRoom = GetWorld()->SpawnActor<AActor>(
+            Cell.Room.RoomBlueprintClass,
+            SpawnLocation,
+            SpawnRotation
+        );
+        
+        if (SpawnedRoom)
+        {
+            DebugLog(FString::Printf(TEXT("Successfully spawned room blueprint: %s at location %s"), 
+                *SpawnedRoom->GetName(), *SpawnLocation.ToString()), this);
+                
+            // Store reference to spawned room for potential future use
+            const_cast<FRoom&>(Cell.Room).SpawnedRoomActor = SpawnedRoom;
+            
+            // Configure room doors based on active door states
+            ConfigureRoomDoors(SpawnedRoom, Cell.Room);
+        }
+        else
+        {
+            ErrorLog(FString::Printf(TEXT("Failed to spawn room blueprint for cell at %s"), 
+                *Cell.CellCoord.ToString()), this);
+        }
+    }
+}
+
+void UDungeonWorldBuilderComponent::ConfigureRoomDoors(AActor* RoomActor, const FRoom& Room)
+{
+    if (!RoomActor)
+    {
+        return;
+    }
+    
+    // Find all door actors in the spawned room using the Door class
+    TArray<AActor*> FoundDoors;
+    UGameplayStatics::GetAllActorsOfClass(GetWorld(), ADoor::StaticClass(), FoundDoors);
+    
+    for (AActor* DoorActor : FoundDoors)
+    {
+        ADoor* Door = Cast<ADoor>(DoorActor);
+        if (!Door)
+        {
+            continue;
+        }
+        
+        // Check if this door belongs to our room (simple distance check)
+        float Distance = FVector::Dist(Door->GetActorLocation(), RoomActor->GetActorLocation());
+        if (Distance > MapElementsDataAsset->TileSize * 2.0f) // Arbitrary threshold
+        {
+            continue; // Door is too far, probably belongs to another room
+        }
+        
+        // Determine door direction based on its position relative to room center
+        FVector DoorToRoom = RoomActor->GetActorLocation() - Door->GetActorLocation();
+        ECardinalDirection DoorDirection = ECardinalDirection::North;
+        
+        if (FMath::Abs(DoorToRoom.X) > FMath::Abs(DoorToRoom.Y))
+        {
+            DoorDirection = DoorToRoom.X > 0 ? ECardinalDirection::West : ECardinalDirection::East;
+        }
+        else
+        {
+            DoorDirection = DoorToRoom.Y > 0 ? ECardinalDirection::South : ECardinalDirection::North;
+        }
+        
+        // Set door state based on room configuration
+        bool bShouldBeWall = !Room.IsDoorActive(DoorDirection);
+        Door->bIsWall = bShouldBeWall;
+        
+        DebugLog(FString::Printf(TEXT("Configured door in direction %s to be %s"), 
+            *ECardinalDirectionUtils::GetDirectionString(DoorDirection),
+            bShouldBeWall ? TEXT("wall") : TEXT("door")), this);
     }
 }
