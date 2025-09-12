@@ -34,6 +34,7 @@ AEnemyBase::AEnemyBase()
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 
 	HealthComponent->OnDeath.AddDynamic(this, &AEnemyBase::HandleDeath);
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
 	//EnableDebug();
 
@@ -51,6 +52,7 @@ void AEnemyBase::BeginPlay()
 	}
 
 	if (GetHealthComponent()) GetHealthComponent()->Initialize(GetDataAsset()->MaxHealth);
+
 
 	GetCharacterMovement()->SetAvoidanceEnabled(true);      // Enable RVO/crowd avoidance
 	GetCharacterMovement()->AvoidanceWeight = 0.5f; // tune between 0.1 & 1.0
