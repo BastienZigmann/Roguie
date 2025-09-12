@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
+#include "Core/Types/MapTypes.h"
 #include "Utils/Logger.h"
 #include "Door.generated.h"
 
@@ -17,8 +18,13 @@ public:
 	// Sets default values for this actor's properties
 	ADoor();
 
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
 	bool bIsWall = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
+	ECardinalDirection Orientation = ECardinalDirection::None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
 	FName DoorMeshesTag = TEXT("DoorMesh");

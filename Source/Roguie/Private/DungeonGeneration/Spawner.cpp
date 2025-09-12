@@ -44,16 +44,16 @@ void ASpawner::BeginPlay()
 		AEnemyBase* SpawnedEnemy = GetWorld()->SpawnActor<AEnemyBase>(EnemyClass, SpawnLocation, SpawnRotation, SpawnParams);
 		if (SpawnedEnemy)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Spawned enemy: %s"), *SpawnedEnemy->GetName());
+			DebugLog(FString::Printf(TEXT("Spawned enemy: %s"), *SpawnedEnemy->GetName()), this);
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to spawn enemy."));
+			DebugLog(FString::Printf(TEXT("Failed to spawn enemy.")), this);
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("EnemyClass is not set in Spawner."));
+		DebugLog(FString::Printf(TEXT("EnemyClass is not set in Spawner.")), this);
 	}
 	
 }

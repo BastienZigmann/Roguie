@@ -8,15 +8,13 @@ ADoor::ADoor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	EnableDebug(true);
-
 	
 }
 
-// Called when the game starts or when spawned
-void ADoor::BeginPlay()
+void ADoor::OnConstruction(const FTransform& Transform)
 {
-	Super::BeginPlay();
+    Super::OnConstruction(Transform);
+
 	TArray<UStaticMeshComponent*> TempDoors, TempWalls;
 	GatherByTags(TempDoors, TempWalls);
 
@@ -36,6 +34,12 @@ void ADoor::BeginPlay()
         SMC->SetCollisionEnabled(!bIsWall ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision);
         SMC->SetGenerateOverlapEvents(!bIsWall);
 	}
+}
+
+// Called when the game starts or when spawned
+void ADoor::BeginPlay()
+{
+	Super::BeginPlay();
 
 }
 
