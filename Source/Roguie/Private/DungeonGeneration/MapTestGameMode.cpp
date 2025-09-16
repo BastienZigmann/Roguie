@@ -35,11 +35,11 @@ void AMapTestGameMode::BeginPlay()
     FRotator Rotation = FRotator::ZeroRotator;
     FTransform SpawnTransform(Rotation, Location);
     AMapGenerator* MapGenerator = GetWorld()->SpawnActor<AMapGenerator>(MapGeneratorClass, SpawnTransform);
-    if (MapGenerator)
-    {
-        ACharacter* PlayerCharacter = SpawnPlayer(MapGenerator->GetPlayerStartingLocation());
-        PossessPlayer(PlayerCharacter);
-    }
+    // if (MapGenerator)
+    // {
+    //     ACharacter* PlayerCharacter = SpawnPlayer(MapGenerator->GetPlayerStartingLocation());
+    //     PossessPlayer(PlayerCharacter);
+    // }
 
 }
 

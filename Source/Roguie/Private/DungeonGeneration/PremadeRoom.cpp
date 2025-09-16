@@ -9,7 +9,7 @@ APremadeRoom::APremadeRoom()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	EnableDebug(true);
+	//EnableDebug(true);
 
 }
 

@@ -1,5 +1,6 @@
 
 #include "Core/Types/MapTypes.h"
+#include "DungeonGeneration/PremadeRoom.h"
 #include "CoreMinimal.h"
 
 // **************************************
@@ -31,464 +32,213 @@ FString ECardinalDirectionUtils::GetDirectionString(const ECardinalDirection& Di
 }
 
 // **************************************
-// ************ Corridors ***************
+// ******** FCell ***********************
 // **************************************
-
-FCorridor::FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd)
-    : ParentMap(InParentMap), StartingCellCoord(InStart), EndingCellCoord(InEnd)
+FCell::FCell()
+    : RoomClass(nullptr), RoomType(ERoomType::None), Index(-1)
 {
-    if (!ParentMap)
+}
+
+FCell::FCell(int32 IndexIn)
+    : RoomClass(nullptr), RoomType(ERoomType::None), Index(IndexIn)
+{
+}
+	
+bool FCell::IsEmpty() const
+{
+    return RoomClass == nullptr && RoomType == ERoomType::None; 
+}
+bool FCell::IsBanned() const
+{
+    return RoomType == ERoomType::Banned; 
+}
+void FCell::SetRoom(ERoomType InRoomType, TSubclassOf<APremadeRoom> InRoomClass)
+{
+    RoomType = InRoomType;
+    RoomClass = InRoomClass;
+}
+
+
+// **************************************
+// ******** FDungeonMap *****************
+// **************************************
+FDungeonMap::FDungeonMap()
+    : NbCellsX(10), NbCellsY(10), TileSize(400)
+{
+    Cells.SetNum(NbCellsX * NbCellsY);
+    Cells.Reserve(NbCellsX * NbCellsY);
+    for (int32 i = 0; i < Cells.Num(); i++)
+        Cells[i] = FCell(i);
+}
+
+FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InTileSize, int32 InNbTilesInCellsX, int32 InNbTilesInCellsY)
+    : NbCellsX(InNbCellsX), NbCellsY(InNbCellsY), TileSize(InTileSize), NbTilesInCellsX(InNbTilesInCellsX), NbTilesInCellsY(InNbTilesInCellsY)
+{
+    Cells.Reserve(NbCellsX * NbCellsY);
+    Cells.SetNum(NbCellsX * NbCellsY);
+    for (int32 i = 0; i < Cells.Num(); i++)
+        Cells[i] = FCell(i);
+}
+
+void FDungeonMap::AddRoom(FIntCoordinate CellCoord, ERoomType RoomType, TSubclassOf<APremadeRoom> RoomClass)
+{
+    if (!IsCellCoordinateValid(CellCoord))
     {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor created with null ParentMap!"));
+        UE_LOG(LogTemp, Error, TEXT("AddRoom: Invalid cell coordinate (%d, %d)"), CellCoord.x, CellCoord.y);
         return;
     }
-    StartingTile = FIntCoordinate::ZeroCoord;
-    EndingTile = FIntCoordinate::ZeroCoord;
-    GeneralDirection = StartingCellCoord.GetDirectionTo(EndingCellCoord);
+    int32 CellIndex = GetCellIndex(CellCoord.x, CellCoord.y);
+    Cells[CellIndex].SetRoom(RoomType, RoomClass);
 }
 
-const FCell* FCorridor::GetStartingCell() const
+void FDungeonMap::BanCell(FIntCoordinate CellCoord)
 {
-    return ParentMap ? ParentMap->GetCell(StartingCellCoord) : nullptr;
+    if (!IsCellCoordinateValid(CellCoord))
+    {
+        UE_LOG(LogTemp, Error, TEXT("BanCell: Invalid cell coordinate (%d, %d)"), CellCoord.x, CellCoord.y);
+        return;
+    }
+    AddRoom(CellCoord, ERoomType::Banned);
 }
 
-const FCell* FCorridor::GetEndingCell() const
+void FDungeonMap::AddCorridor(FIntCoordinate FromCellCoord, FIntCoordinate ToCellCoord)
 {
-    return ParentMap ? ParentMap->GetCell(EndingCellCoord) : nullptr;
+    // Implementation for adding a corridor between two adjacent cells
+    // This could involve updating the Tiles array or other data structures
+    // to represent the corridor in the dungeon map.
+    // For now, this is a placeholder function.
 }
 
-void FCorridor::AddPathTile(FIntCoordinate Tile)
-{
-    const FCell* StartingCell = GetStartingCell();
-    const FCell* EndingCell = GetEndingCell();
-
-    if (!StartingCell || !EndingCell)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting or Ending cell is not set."));
-        return; // Handle uninitialized corridor
-    }
-    if (StartingTile == FIntCoordinate::ZeroCoord || EndingTile == FIntCoordinate::ZeroCoord)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting or Ending tile is not set."));
-        return; // Handle uninitialized corridor tiles
-    }
-    if (StartingCell == EndingCell || StartingTile == EndingTile)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCorridor::AddPathTile: Starting and Ending cell/tiles are the same."));
-        return; // Handle invalid corridor
-    }
-    if (PathTiles.Contains(Tile))
-    {
-        UE_LOG(LogTemp, Warning, TEXT("Tile %s already exists in corridor."), *Tile.ToString());
-        return; // Tile already exists in corridor
-    }
-    PathTiles.Add(Tile);
+FIntCoordinate FDungeonMap::GetStandardStartingCellCoordinate() const 
+{ 
+    return FIntCoordinate(NbCellsX / 2, NbCellsY / 2); 
 }
 
-// **************************************
-// ************ Tiles *******************
-// **************************************
-FTile::FTile() : ParentMap(nullptr), TileCoord(FIntCoordinate::ZeroCoord), IndexInTilesArray(-1), Type(FTileType::Empty)
+const FIntCoordinate FDungeonMap::GetCellWorldCoordinate(int32 CellIndex) const
 {
-    // Default constructor initializes to empty tile
+    if (!IsCellIndexValid(CellIndex))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCellCoordinate: CellIndex %d out of bounds"), CellIndex);
+        return FIntCoordinate(-1, -1);
+    }
+    int32 x = (CellIndex % NbCellsX) * TileSize * NbTilesInCellsX;
+    int32 y = (CellIndex / NbCellsX) * TileSize * NbTilesInCellsY;
+    return FIntCoordinate(x, y) + GetCellCenterOffset(CellIndex);
 }
 
-FTile::FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileType InType) : ParentMap(InParentMap), TileCoord(InTileCoord), Type(InType) 
+TArray<ECardinalDirection> FDungeonMap::GetAvailableDirections(FIntCoordinate CellCoord) const
 {
-    if (!ParentMap)
+    if (!IsCellCoordinateValid(CellCoord))
     {
-        UE_LOG(LogTemp, Error, TEXT("FTile::FTile: Parent map is null."));
-        return; // Handle uninitialized parent map
-    }
-    IndexInTilesArray = ParentMap->GetTileIndex(TileCoord);
-}
-
-// ***************************************
-// ************ Rooms ********************
-// ***************************************
-bool FRoom::IsAdjacentTo(const FRoom& Other) const
-{
-    // Get Direction, and check rooms boundaries to be along the edge.
-    // If it is, check overlapping coordinates.
-    if (!ParentCell || !Other.ParentCell)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Parent cells are not set."));
-        return false; // Handle uninitialized parent cells
+        UE_LOG(LogTemp, Error, TEXT("GetAvailableDirections: Invalid cell coordinate (%d, %d)"), CellCoord.x, CellCoord.y);
+        return {};
     }
 
-    // If rooms are in the same cell, they can't be adjacent in the way we define adjacency
-    if (ParentCell->CellCoord == Other.ParentCell->CellCoord)
+    TArray<ECardinalDirection> AvailableDirections;
+    for (ECardinalDirection Direction : ECardinalDirectionUtils::GetAllCardinalDirections())
     {
-        UE_LOG(LogTemp, Error, TEXT("FRoom::IsAdjacentTo: Both rooms are in the same cell [%d,%d], which is invalid."), 
-            ParentCell->CellCoord.x, ParentCell->CellCoord.y);
-        return false;
+        FIntCoordinate Neighbor = CellCoord.GetNeighbor(Direction);
+        if (!IsCellCoordinateValid(Neighbor)) continue; // Skip out-of-bounds neighbors
+        const FCell& NeighborCell = GetCellRef(Neighbor);
+        if (NeighborCell.IsEmpty())
+            AvailableDirections.Add(Direction);
     }
 
-    ECardinalDirection Direction = ParentCell->CellCoord.GetDirectionTo(Other.ParentCell->CellCoord);
-    if (ParentCell->CellCoord.GetManhattanDistance(Other.ParentCell->CellCoord) != 1)
-    {
-        // Cells must be immediate neighbors
-        return false;
-    }
-    // Calculate global tile coordinates for both rooms
-    int32 CellSizeX = ParentCell->ParentMap->NbTilesInCellsX;
-    int32 CellSizeY = ParentCell->ParentMap->NbTilesInCellsY;
-    
-    // Get room boundaries in global tile coordinates
-    FIntCoordinate ThisRoomStart = Position + ParentCell->BaseTileCoordinate;
-    FIntCoordinate ThisRoomEnd = ThisRoomStart + FIntCoordinate(LengthX, LengthY);
-    
-    FIntCoordinate OtherRoomStart = Other.Position + Other.ParentCell->BaseTileCoordinate;
-    FIntCoordinate OtherRoomEnd = OtherRoomStart + FIntCoordinate(Other.LengthX, Other.LengthY);
-    
-    // Check for adjacency based on direction
-    switch (Direction)
-    {
-        case ECardinalDirection::North:
-            // This room is below Other room, check vertical adjacency and horizontal overlap
-            if (ThisRoomStart.y == OtherRoomEnd.y &&  // Vertical adjacency
-                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::East:
-            // This room is left of Other room, check horizontal adjacency and vertical overlap
-            if (ThisRoomEnd.x == OtherRoomStart.x &&  // Horizontal adjacency
-                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::South:
-            // This room is above Other room, check vertical adjacency and horizontal overlap
-            if (ThisRoomEnd.y == OtherRoomStart.y &&  // Vertical adjacency
-                !(ThisRoomEnd.x <= OtherRoomStart.x || ThisRoomStart.x >= OtherRoomEnd.x)) // Horizontal overlap
-            {
-                return true;
-            }
-            break;
-            
-        case ECardinalDirection::West:
-            // This room is right of Other room, check horizontal adjacency and vertical overlap
-            if (ThisRoomStart.x == OtherRoomEnd.x &&  // Horizontal adjacency
-                !(ThisRoomEnd.y <= OtherRoomStart.y || ThisRoomStart.y >= OtherRoomEnd.y)) // Vertical overlap
-            {
-                return true;
-            }
-            break;
-    }
-    
-    // If we get here, the rooms are not adjacent
-    return false;
-}
-
-FVector FRoom::GetWorldPositionCenter() const 
-{
-    return ParentCell->GetFirstTileWorldPosition() + ((Position.ToFVector() + FVector(LengthX / 2, LengthY / 2, 0.0)) * ParentCell->ParentMap->TileSize); 
-}
-
-
-// **************************************
-// ************ FCell *******************
-// **************************************
-FCell::FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& InRoom)
-    : ParentMap(InParentMap), CellCoord(InCellCoord), Room(InRoom)
-{
-    if (!InParentMap)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCell::FCell: Parent map is null."));
-        return; // Handle uninitialized parent map
-    }
-    Room.SetParentCell(this);
-    BaseTileCoordinate = InParentMap ? FIntCoordinate(InParentMap->NbTilesInCellsX * CellCoord.x, InParentMap->NbTilesInCellsY * CellCoord.y) : FIntCoordinate::ZeroCoord;
-    IndexInCellsArray = InParentMap->GetCellIndex(CellCoord);
-    IndexInTileArray = InParentMap->GetTileIndex(BaseTileCoordinate);
-    bIsActive = true;
-}
-
-FTile& FCell::GetBaseTile()
-{
-    if (!ParentMap)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCell::GetBaseTile: Parent map is null."));
-        return *new FTile(); // Handle uninitialized parent map
-    }
-    if (IndexInTileArray < 0 || IndexInTileArray >= ParentMap->Tiles.Num())
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCell::GetBaseTile: Invalid tile index %d."), IndexInTileArray);
-        return *new FTile(); // Handle invalid tile index
-    }
-    return ParentMap->Tiles[IndexInTileArray];
-}
-
-bool FCell::IsTileInRoom(const FIntCoordinate& Coord) const
-{
-    if (!ParentMap) return false; // If no parent map, cannot be in room
-    if (!Room.ParentCell || Room.LengthX <= 0 || Room.LengthY <= 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FCell::IsTileInRoom: Invalid room dimensions or parent cell."));
-        return false; // Handle invalid room
-    }
-    // Check if it's the good cell
-    FIntCoordinate DivCoord(Coord.x / ParentMap->NbTilesInCellsX, Coord.y / ParentMap->NbTilesInCellsY);
-    if (DivCoord != CellCoord)
-        return false; // Tile is not in this cell
-
-    
-    // Check if the tile's coordinates are within the room's boundaries
-    FIntCoordinate RoomStart = Room.Position;
-    FIntCoordinate RoomEnd = RoomStart + FIntCoordinate(Room.LengthX, Room.LengthY);
-
-    
-    FIntCoordinate ModCoord = Coord % FIntCoordinate(ParentMap->NbTilesInCellsX, ParentMap->NbTilesInCellsY);
-
-    
-    return (ModCoord.x >= RoomStart.x && ModCoord.x < RoomEnd.x &&
-            ModCoord.y >= RoomStart.y && ModCoord.y < RoomEnd.y);
-}
-
-bool FCell::IsTileInRoom(const FTile& Tile) const
-{
-    return IsTileInRoom(Tile.TileCoord);
-}
-
-const FCell& FCell::GetNeighbor(ECardinalDirection Direction) const
-{
-    if (!ParentMap) return *this; // If no parent map, return self
-
-    FIntCoordinate NeighborCoord = CellCoord.GetNeighbor(Direction);
-    return *ParentMap->GetCell(NeighborCoord);
-}
-
-bool FCell::IsNeighbor(const FCell& Other) const
-{
-    return CellCoord.GetManhattanDistance(Other.CellCoord) == 1;
-}
-
-FVector FCell::GetFirstTileWorldPosition() const 
-{
-    return (BaseTileCoordinate.ToFVector() * ParentMap->TileSize) + ParentMap->WorldLocationTilesOffset;
-}
-
-// **************************************
-// ************ FDungeonMap *************
-// **************************************
-FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX, int32 InNbTilesInCellsY, float InTileSize)
-		: NbCellsX(InNbCellsX), NbTilesInCellsX(InNbTilesInCellsX), NbCellsY(InNbCellsY), NbTilesInCellsY(InNbTilesInCellsY), TileSize(InTileSize)
-{
-    int32 TotalCells = NbCellsX * NbCellsY;
-    if (TotalCells <= 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FDungeonMap: Invalid size (%d, %d)"), NbCellsX, NbCellsY);
-        return; // Handle invalid size
-    }
-
-    // Init all cells
-    Cells.SetNum(TotalCells);
-    for (int32 i = 0; i < TotalCells; ++i)
-    {
-        FIntCoordinate CellCoord(i % NbCellsX, i / NbCellsX);
-        Cells[i] = FCell();
-    }
-
-    int32 TotalTiles = TotalCells * NbTilesInCellsX * NbTilesInCellsY;
-    Tiles.SetNum(TotalTiles);
-    for (int32 i = 0; i < TotalTiles; ++i)
-    {
-        Tiles[i] = FTile(this, GetTileCoordinates(i), FTileType::Empty);
-    }
-    
-    // Init flag bitarrays
-    OccupiedCells.Init(false, TotalCells);
-    BannedCells.Init(false, TotalCells);
-
-    WorldLocationTilesOffset = FVector(TileSize / 2.0f, TileSize / 2.0f, 0.0f);
-}
-
-void FDungeonMap::SetCell(const FCell& Cell) 
-{
-    int32 index = GetCellIndex(Cell.CellCoord);
-    if (index < 0 || index >= Cells.Num())
-    {
-        UE_LOG(LogTemp, Error, TEXT("SetCell: Invalid coordinates %s"), *Cell.CellCoord.ToString());
-        return; // Handle invalid coordinates
-    }
-    if (OccupiedCells[index] || BannedCells[index])
-    {
-        UE_LOG(LogTemp, Error, TEXT("SetCell: Cell at %s is already occupied or is banned"), *Cell.CellCoord.ToString());
-        return; // Handle already occupied cell
-    }
-    OccupiedCells[index] = true;
-    BannedCells[index] = false;
-    Cells[index] = Cell; 
-    Cells[index].Room.SetParentCell(&Cells[index]); // Set the parent cell for the room
-}
-
-FCell* FDungeonMap::GetCell(const FIntCoordinate& Coord)
-{
-    FCell* cell = GetCellByCoordinates(Coord);
-    if (!cell) return nullptr; // Check if cell is valid
-    if (cell->IndexInCellsArray < 0 || cell->IndexInCellsArray >= Cells.Num()) return nullptr;
-    if (BannedCells[cell->IndexInCellsArray]) return nullptr;
-    if (!OccupiedCells[cell->IndexInCellsArray]) return nullptr;
-    return &Cells[cell->IndexInCellsArray]; 
-}
-
-const FCell* FDungeonMap::GetCell(const FIntCoordinate& Coord) const
-{
-    // Check if coordinates are within bounds
-    const FCell* cell = GetConstCellByCoordinates(Coord);
-    if (!cell) return nullptr; // Check if cell is valid
-    if (cell->IndexInCellsArray < 0 || cell->IndexInCellsArray >= Cells.Num()) return nullptr;
-    if (BannedCells[cell->IndexInCellsArray]) return nullptr;
-    if (!OccupiedCells[cell->IndexInCellsArray]) return nullptr;
-    return &Cells[cell->IndexInCellsArray];
-}
-
-void FDungeonMap::BanCell(const FIntCoordinate& CellCoord)
-{
-    int32 CellIndex = GetCellIndex(CellCoord);
-    if (CellIndex == INDEX_NONE) return;
-    if (CellIndex < 0 || CellIndex >= Cells.Num()) return;
-    if (OccupiedCells[CellIndex])
-    {
-        OccupiedCells[CellIndex] = false;
-    }
-    BannedCells[CellIndex] = true;
-}
-
-// Not to call alone, will erase corridors
-void FDungeonMap::FillCellTiles(const FCell& Cell)
-{
-    for (int32 i = 0; i < NbTilesInCellsX; ++i)
-    {
-        for (int32 j = 0; j < NbTilesInCellsY; ++j)
-        {
-            FIntCoordinate TileCoord(i, j);
-            TileCoord = TileCoord + Cell.BaseTileCoordinate; // Adjust to the cell's base tile coordinate
-            int32 TileIndex = GetTileIndex(TileCoord);
-            if (TileIndex >= 0 && TileIndex < Tiles.Num())
-            {
-                FTile newTile = FTile(this, TileCoord, FTileType::Empty);
-                if (Cell.IsTileInRoom(TileCoord))
-                {
-                    newTile.Type = FTileType::Room;
-                }
-                Tiles[TileIndex] = newTile;
-            }
-        }
-    }
-}
-
-void FDungeonMap::FillCorridorTiles(const FCorridor& Corridor)
-{
-    if (!Corridor.GetStartingCell() || !Corridor.GetEndingCell() || Corridor.PathTiles.Num() == 0)
-    {
-        UE_LOG(LogTemp, Error, TEXT("FillCorridorTiles: Corridor is not properly initialized."));
-        return; // Handle uninitialized corridor
-    }
-
-    for (const FIntCoordinate& PathTile : Corridor.PathTiles)
-    {
-        int32 TileIndex = GetTileIndex(PathTile);
-        if (TileIndex >= 0 && TileIndex < Tiles.Num())
-        {
-            FTile newTile = FTile(this, PathTile, FTileType::Corridor);
-            Tiles[TileIndex] = newTile;
-        }
-    }   
-    int index = GetTileIndex(Corridor.StartingTile);
-    if (index >= 0 && index < Tiles.Num())
-    {
-        Tiles[index].bHasDoor = true;
-        Tiles[index].DoorDirections.Add(Corridor.GeneralDirection);
-    }
-    index = GetTileIndex(Corridor.EndingTile);
-    if (index >= 0 && index < Tiles.Num())
-    {
-        Tiles[index].bHasDoor = true;
-        Tiles[index].DoorDirections.Add(ECardinalDirectionUtils::GetOppositeDirection(Corridor.GeneralDirection));
-    }
-}
-
-// To Call at the end of the generation
-void FDungeonMap::FillMapTiles()
-{
-    for (const FCell& Cell : Cells)
-    {
-        if (!Cell.IsValid()) continue;
-        if (Cell.IndexInCellsArray != -1 && OccupiedCells[Cell.IndexInCellsArray])
-        {
-            FillCellTiles(Cell);
-        }
-    }
-
-    for (const FCorridor& Corridor : Corridors)
-    {
-        FillCorridorTiles(Corridor);
-    }
-}
-
-FCell* FDungeonMap::GetCellFromTile(FTile Tile)
-{
-    if (Tile.TileCoord.x < 0 || Tile.TileCoord.x >= NbCellsX * NbTilesInCellsX ||
-        Tile.TileCoord.y < 0 || Tile.TileCoord.y >= NbCellsY * NbTilesInCellsY)
-        {
-            UE_LOG(LogTemp, Error, TEXT("GetTileCell: Invalid tile position %s"), *Tile.TileCoord.ToString());
-            return nullptr; // Handle invalid tile position
-        }
-
-        FIntCoordinate CellCoord(Tile.TileCoord.x / NbTilesInCellsX, Tile.TileCoord.y / NbTilesInCellsY);
-        return GetCellByCoordinates(CellCoord);
-}
-
-TArray<ECardinalDirection> FDungeonMap::GetAvailableDirections(const FIntCoordinate& CellCoord) const
-{
-    TArray<ECardinalDirection> AvailableDirections {};
-
-    if (CellCoord.y > 0 && IsCellEmptyAndAvailable(CellCoord.GetNeighbor(ECardinalDirection::North)))
-        AvailableDirections.Add(ECardinalDirection::North);
-    if (CellCoord.x < NbCellsX - 1 && IsCellEmptyAndAvailable(CellCoord.GetNeighbor(ECardinalDirection::East)))
-        AvailableDirections.Add(ECardinalDirection::East);
-    if (CellCoord.y < NbCellsY - 1 && IsCellEmptyAndAvailable(CellCoord.GetNeighbor(ECardinalDirection::South)))
-        AvailableDirections.Add(ECardinalDirection::South);
-    if (CellCoord.x > 0 && IsCellEmptyAndAvailable(CellCoord.GetNeighbor(ECardinalDirection::West)))
-        AvailableDirections.Add(ECardinalDirection::West);
     return AvailableDirections;
 }
 
-TArray<ECardinalDirection> FDungeonMap::GetExistingRoomsDirection(const FIntCoordinate& CellCoord) const
+FCell* FDungeonMap::GetCell(FIntCoordinate CellCoord)
 {
-    TArray<ECardinalDirection> ExistingRoomsDirections {};
-
-    if (CellCoord.y > 0 && IsOccupied(CellCoord.GetNeighbor(ECardinalDirection::North)))
-        ExistingRoomsDirections.Add(ECardinalDirection::North);
-    if (CellCoord.x < NbCellsX - 1 && IsOccupied(CellCoord.GetNeighbor(ECardinalDirection::East)))
-        ExistingRoomsDirections.Add(ECardinalDirection::East);
-    if (CellCoord.y < NbCellsY - 1 && IsOccupied(CellCoord.GetNeighbor(ECardinalDirection::South)))
-        ExistingRoomsDirections.Add(ECardinalDirection::South);
-    if (CellCoord.x > 0 && IsOccupied(CellCoord.GetNeighbor(ECardinalDirection::West)))
-        ExistingRoomsDirections.Add(ECardinalDirection::West);
-    return ExistingRoomsDirections;
+    if (!IsCellCoordinateValid(CellCoord))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCell: Invalid cell coordinate (%d, %d)"), CellCoord.x, CellCoord.y);
+        return nullptr;
+    }
+    int32 CellIndex = GetCellIndex(CellCoord.x, CellCoord.y);
+    return &Cells[CellIndex];
 }
 
-FColor FDungeonMap::GetDebugColor(const FCell& Cell) const
+const FCell& FDungeonMap::GetCellRef(FIntCoordinate CellCoord) const
 {
-    if (IsCellEmptyAndAvailable(Cell.CellCoord)) return FColor::Green;
-    if (OccupiedCells[Cell.IndexInCellsArray]) return FColor::Blue;
-    if (BannedCells[Cell.IndexInCellsArray]) return FColor::Red;
-    return FColor::Black;
+    if (!IsCellCoordinateValid(CellCoord))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCellRef: Invalid cell coordinate (%d, %d)"), CellCoord.x, CellCoord.y);
+        // Return a reference to a static empty cell to avoid returning a dangling reference
+        static FCell EmptyCell;
+        return EmptyCell;
+    }
+    int32 CellIndex = GetCellIndex(CellCoord.x, CellCoord.y);
+    return Cells[CellIndex];
 }
 
-void FDungeonMap::AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord)
+FCell* FDungeonMap::GetCell(int32 index)
 {
-    if (StartingCellCoord == EndingCellCoord) return; // No corridor needed if start and end are the same
-    // check if rooms are against each other
-    if (GetCell(StartingCellCoord)->Room.IsAdjacentTo(GetCell(EndingCellCoord)->Room) ) return;
+    if (!IsCellIndexValid(index))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCell: Index %d out of bounds"), index);
+        return nullptr;
+    }
+    return &Cells[index];
+}
 
-    FCorridor NewCorridor(this, StartingCellCoord, EndingCellCoord);
-    Corridors.Add(NewCorridor);
+const FCell& FDungeonMap::GetCellRef(int32 index) const
+{
+    if (!IsCellIndexValid(index))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCellRef: Index %d out of bounds"), index);
+        // Return a reference to a static empty cell to avoid returning a dangling reference
+        static FCell EmptyCell;
+        return EmptyCell;
+    }
+    return Cells[index];
+}
+
+bool FDungeonMap::IsCellCoordinateValid(FIntCoordinate CellCoord) const
+{
+    return CellCoord.x >= 0 && CellCoord.x < NbCellsX && CellCoord.y >= 0 && CellCoord.y < NbCellsY;
+}
+
+bool FDungeonMap::IsCellIndexValid(int32 CellIndex) const 
+{
+    return CellIndex >= 0 && CellIndex < Cells.Num(); 
+} 
+
+int32 FDungeonMap::GetRoomCount() const
+{
+    int32 count = 0;
+    for (const FCell& Cell : Cells)
+        if (!Cell.IsEmpty() && !Cell.IsBanned())
+            count++;
+    return count;
+}
+
+int32 FDungeonMap::GetEmptyCellsCount() const
+{
+    int32 count = 0;
+    for (const FCell& Cell : Cells)
+        if (Cell.IsEmpty())
+            count++;
+    return count;
+}
+
+int32 FDungeonMap::GetCellIndex(int32 i, int32 j) const 
+{
+    return i + j * NbCellsX; 
+}
+
+FIntCoordinate FDungeonMap::GetCellCoordinate(int32 CellIndex) const
+{
+    if (!IsCellIndexValid(CellIndex))
+    {
+        UE_LOG(LogTemp, Error, TEXT("GetCellCoordinate: CellIndex %d out of bounds"), CellIndex);
+        return FIntCoordinate(-1, -1);
+    }
+    int32 x = CellIndex % NbCellsX;
+    int32 y = CellIndex / NbCellsX;
+    return FIntCoordinate(x, y);
+}
+
+FIntCoordinate FDungeonMap::GetCellCenterOffset(int32 CellIndex) const
+{
+    return FIntCoordinate(NbTilesInCellsX * TileSize / 2, NbTilesInCellsY * TileSize / 2);
 }

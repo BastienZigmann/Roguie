@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Core/Types/MapTypes.h"
 #include "Engine/DataAsset.h"
+#include "DungeonGeneration/PremadeRoom.h"
 #include "MapDataAsset.generated.h"
 
 /**
@@ -25,12 +26,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
 	int32 MapHeight = 10; 
 
-	// Number of tiles in every cells
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 CellNumberOfTilesX = 10; 
-	// Number of tiles in the cell on Y axis
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	int32 CellNumberOfTilesY = 10; 
+	// // Number of tiles in every cells
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	// int32 CellNumberOfTilesX = 10; 
+	// // Number of tiles in the cell on Y axis
+	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
+	// int32 CellNumberOfTilesY = 10; 
 
 	// Size of the standard floor tile
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
@@ -44,20 +45,20 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
 	int32 IntendedNumberOfRooms = 10;
 
-	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Data")
-	// EAssetsAnchorType AssetsAnchorRule = EAssetsAnchorType::Center; // Anchor type for the map elements
-
-	// --- Visual Elements
+	// Room pool
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
-	TArray<FMapElement> Walls;
-
+	TArray<TSubclassOf<APremadeRoom>> NormalRooms;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
-	TArray<FMapElement> Floors;
-
+	TArray<TSubclassOf<APremadeRoom>> StartingRooms;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
-	TArray<FMapElement> Props;
-
+	TArray<TSubclassOf<APremadeRoom>> BossRooms;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
-	TArray<FMapElement> Doors;
+	TArray<TSubclassOf<APremadeRoom>> ShopRooms;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
+	TArray<TSubclassOf<APremadeRoom>> TreasureRooms;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
+	TArray<TSubclassOf<APremadeRoom>> EndingRooms;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Map Elements")
+	TArray<TSubclassOf<APremadeRoom>> SecretRooms;
 
 };

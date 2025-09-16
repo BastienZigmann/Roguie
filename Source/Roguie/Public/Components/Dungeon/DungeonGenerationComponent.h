@@ -31,16 +31,15 @@ protected:
 
 private:
 
-	FCell CreateRandomizedCell(FDungeonMap& DungeonMap, FIntCoordinate CellCoord,ERoomType RoomType = ERoomType::Normal);
-	FRoom CreateRandomizedRoom(const int32 ForcedSizeX = 0, const int32 ForcedSizeY = 0);
+	TSubclassOf<APremadeRoom> PickRoom(ERoomType RoomType);
 	
-	void ComputeCorridors(FDungeonMap& DungeonMap);
-	ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
-	void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor) const;
-	TArray<FIntCoordinate> GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const ;
-	void CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor);
+	// void ComputeCorridors(FDungeonMap& DungeonMap);
+	// ECardinalDirection ComputeDirection(const FIntCoordinate& Start, const FIntCoordinate& End) const;
+	// void PickCorridorStartAndEndTile(const FDungeonMap& DungeonMap, FCorridor& Corridor) const;
+	// TArray<FIntCoordinate> GetPotentialCorridorPassageWay(const FDungeonMap& DungeonMap, const FCell& Cell, const ECardinalDirection Side) const ;
+	// void CreateCorridorPath(const FDungeonMap& DungeonMap, FCorridor& Corridor);
 	// Given a percentage of chances to happen, return true if a corridor has been created to connect the room to another adjacent existing room. To avoid backtracking
-	bool AddCorridorToExistingRooms(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCellCoord, int32 Chances);
+	// bool AddCorridorToExistingRooms(FDungeonMap& DungeonMap, const FIntCoordinate& StartingCellCoord, int32 Chances);
 
 	UPROPERTY()
 	TObjectPtr<UMapDataAsset> MapElementsDataAsset;

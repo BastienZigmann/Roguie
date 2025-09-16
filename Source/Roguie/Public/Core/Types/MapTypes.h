@@ -8,8 +8,7 @@
 
 struct ROGUIE_API FDungeonMap;
 struct ROGUIE_API FCell;
-struct ROGUIE_API FRoom;
-struct ROGUIE_API FTile;
+class ROGUIE_API APremadeRoom;
 
 // **************************************
 // ******** Coordinate System ***********
@@ -76,10 +75,10 @@ struct ROGUIE_API TCoordinate
 
     FString ToString() const { return FString::Printf(TEXT("(%s, %s)"), *LexToString(x), *LexToString(y)); }
 
-	TCoordinate GetNorthNeighbor() const { return TCoordinate(x, y - 1); }
-	TCoordinate GetEastNeighbor() const { return TCoordinate(x + 1, y); }
-	TCoordinate GetSouthNeighbor() const { return TCoordinate(x, y + 1); }
-	TCoordinate GetWestNeighbor() const { return TCoordinate(x - 1, y); }
+	TCoordinate GetNorthNeighbor() const { return TCoordinate(x + 1, y); }
+	TCoordinate GetEastNeighbor() const { return TCoordinate(x, y + 1); }
+	TCoordinate GetSouthNeighbor() const { return TCoordinate(x - 1, y); }
+	TCoordinate GetWestNeighbor() const { return TCoordinate(x, y - 1); }
 	TCoordinate GetNeighbor(ECardinalDirection Direction) const
 	{
 		switch(Direction)
@@ -97,9 +96,9 @@ struct ROGUIE_API TCoordinate
 	{
 		FVector2D Displacement = GetDisplacementVectorTo(Other);
 		if (FMath::Abs(Displacement.X) > FMath::Abs(Displacement.Y))
-			return Displacement.X > 0 ? ECardinalDirection::East : ECardinalDirection::West;
+			return Displacement.X > 0 ? ECardinalDirection::North : ECardinalDirection::South;
 		else
-			return Displacement.Y > 0 ? ECardinalDirection::South : ECardinalDirection::North;
+			return Displacement.Y > 0 ? ECardinalDirection::East : ECardinalDirection::West;
 	}
 
 	T GetManhattanDistance(const TCoordinate& Other) const { return FMath::Abs(x - Other.x) + FMath::Abs(y - Other.y); }
@@ -164,143 +163,54 @@ const FDoubleCoordinate FDoubleCoordinate::ZeroCoord(0.0, 0.0);
 // ******** Map Types *******************
 // **************************************
 
-USTRUCT()
-struct ROGUIE_API FCorridor
-{
-	GENERATED_BODY()
+// UENUM()
+// enum class ETileType : uint8
+// {
+// 	None        UMETA(DisplayName = "None"),
+// 	Room        UMETA(DisplayName = "Room"),
+// 	Corridor    UMETA(DisplayName = "Corridor")
+// };
 
-	FDungeonMap* ParentMap; // Pointer to the map this corridor belongs to
-	ECardinalDirection GeneralDirection; // Direction of the corridor
-	FIntCoordinate StartingCellCoord; // Cells where corridor starts IN THE MAP
-	FIntCoordinate EndingCellCoord; // Cells where corridor ends IN THE MAP
-	FIntCoordinate StartingTile, EndingTile; // Tiles where corridor starts and ends IN THE MAP
-	TSet<FIntCoordinate> PathTiles; // Tiles in the corridor IN THE MAP
+// USTRUCT()
+// struct ROGUIE_API FTile
+// {
+// 	GENERATED_BODY()
 
-	FCorridor() : FCorridor(nullptr, FIntCoordinate::ZeroCoord, FIntCoordinate::ZeroCoord) { }
-	FCorridor(FDungeonMap* InParentMap, FIntCoordinate InStart, FIntCoordinate InEnd);
+// 	// UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tile")
+// 	// FIntCoordinate Coordinate;
 
-	const FCell* GetStartingCell() const;
-	const FCell* GetEndingCell() const;
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tile")
+// 	ETileType TileType;
+// };
 
-	void SetStartingTile(const FIntCoordinate& Tile) { StartingTile = Tile; }
-	void SetEndingTile(const FIntCoordinate& Tile) { EndingTile = Tile; }
-	void AddPathTile(FIntCoordinate Tile);
-	FString ToString() const
-	{
-		return FString::Printf(TEXT("Corridor from Cell %s to Cell %s, Tiles Values %s to %s with %d path tiles"), 
-			*StartingCellCoord.ToString(), *EndingCellCoord.ToString(), *StartingTile.ToString(), *EndingTile.ToString(), PathTiles.Num());
-	}
-
-};
-
-UENUM()
-enum class FTileType : uint8
-{
-	Empty       UMETA(DisplayName = "Empty"),
-	Banned      UMETA(DisplayName = "Banned"),
-	Room        UMETA(DisplayName = "Room"),
-	Corridor    UMETA(DisplayName = "Corridor")
-};
-
-
-
-USTRUCT()
-struct ROGUIE_API FTile
-{
-	GENERATED_BODY()
-
-	FDungeonMap* ParentMap; // Pointer to the map this tile belongs to
-	FIntCoordinate TileCoord; // Position of the tile in the Map
-	int32 IndexInTilesArray; // Index in FDungeon Tile array
-	FTileType Type; // Type of the tile (Floor, Corridor, etc.)	
-	
-	bool bHasDoor; // If this tile has a door
-	TArray<ECardinalDirection> DoorDirections; // Direction of the door if this tile is a door tile
-
-	FTile();
-	FTile(FDungeonMap* InParentMap, const FIntCoordinate& InTileCoord, FTileType InType);
-
-	bool HasDoor() const { return bHasDoor && DoorDirections.Num() > 0; } // If the door direction is not None, it has a door
-	ECardinalDirection GetDoorDirection() const
-	{
-		if (HasDoor())
-			return DoorDirections[0];
-		else
-			return ECardinalDirection::North; // Default direction if no door
-	}
-};
-	
 UENUM()
 enum class ERoomType : uint8
 {
+	None        UMETA(DisplayName = "None"), // TBD
 	Normal      UMETA(DisplayName = "Normal"),
 	Starting    UMETA(DisplayName = "Starting"),
 	Boss		UMETA(DisplayName = "Boss"),
 	Shop        UMETA(DisplayName = "Shop"),
-	Treasure	 UMETA(DisplayName = "Treasure"),
+	Treasure	UMETA(DisplayName = "Treasure"),
 	Ending      UMETA(DisplayName = "Ending"),
-	Secret      UMETA(DisplayName = "Secret")
-};
-
-USTRUCT()
-struct ROGUIE_API FRoom
-{
-	GENERATED_BODY()
-
-	FCell* ParentCell; 
-	FIntCoordinate Position; // Position of the room in the Cell. 
-	int32 LengthX; // Number of tiles in the room on X axis
-	int32 LengthY; // Number of tiles in the room on Y axis
-	ERoomType RoomType;
-
-	FRoom() : FRoom(FIntCoordinate::ZeroCoord, 5, 5) { }
-	FRoom(const FIntCoordinate& InPosition, int32 InLengthX, int32 InLengthY) : Position(InPosition), LengthX(InLengthX), LengthY(InLengthY) { }
-
-	void SetParentCell(FCell* InParentCell) { ParentCell = InParentCell; }
-	void SetType(ERoomType InRoomType) { RoomType = InRoomType; }
-
-	bool IsAdjacentTo(const FRoom& Other) const;
-	FVector GetWorldPositionCenter() const;
-
-	inline FString ToString() const
-	{
-		return FString::Printf(TEXT("Room at %s with size (%d, %d) of type %s"), *Position.ToString(), LengthX, LengthY, *UEnum::GetValueAsString(RoomType));
-	}
-
+	Secret      UMETA(DisplayName = "Secret"),
+	Banned	  	UMETA(DisplayName = "Banned") // Cell won't be used in generation
 };
 
 USTRUCT()
 struct ROGUIE_API FCell
 {
 	GENERATED_BODY()
+	TSubclassOf<APremadeRoom> RoomClass = nullptr; // Rooms in this cell
+	ERoomType RoomType = ERoomType::None;
+	int32 Index = -1; // Index in the FDungeonMap Cells array
 
-	FDungeonMap* ParentMap; // Pointer to the map this cell belongs to
-	FIntCoordinate CellCoord; // Position of the cell in the map
-	FIntCoordinate BaseTileCoordinate; // Position of the base tile in the map (top-left corner of the cell)
-	FRoom Room; // Rooms in this cell
-	int32 IndexInCellsArray; // Index in FDungeon Cell array
-	int32 IndexInTileArray; // Index in FDungeon Tile array
-	bool bIsActive; // If the cell is active (has a room)
+	FCell();
+	FCell(int32 IndexIn);
+	bool IsEmpty() const;
+	bool IsBanned() const;
 
-	FCell()
-		: ParentMap(nullptr), CellCoord(FIntCoordinate::ZeroCoord), BaseTileCoordinate(FIntCoordinate::ZeroCoord),
-		  IndexInCellsArray(-1), IndexInTileArray(-1), bIsActive(false)
-	{
-	}
-	FCell(FDungeonMap* InParentMap, FIntCoordinate InCellCoord, const FRoom& InRoom = FRoom());
-	FTile& GetBaseTile();
-	bool IsValid() const { return bIsActive; } // Normal room is empty
-	bool IsTileInRoom(const FIntCoordinate& Coord) const; // world tiles coordinates, not room based !
-	bool IsTileInRoom(const FTile& Tile) const; // world tiles coordinates, not room based !
-	const FCell& GetNeighbor(ECardinalDirection Direction) const;
-	bool IsNeighbor(const FCell& Other) const; // Check if the other cell is a neighbor in the map
-
-	FVector GetFirstTileWorldPosition() const;
-
-	FString ToString() const
-	{
-		return FString::Printf(TEXT("Cell at %s with room of type %s, its index are : CellArray : %d and TileArray : %d, IsValid %d"), *CellCoord.ToString(), *UEnum::GetValueAsString(Room.RoomType), IndexInCellsArray, IndexInTileArray, IsValid());
-	}
+	void SetRoom(ERoomType InRoomType, TSubclassOf<APremadeRoom> InRoomClass = nullptr);
 };
 
 USTRUCT()
@@ -308,173 +218,39 @@ struct ROGUIE_API FDungeonMap
 {
 	GENERATED_BODY()
 
-	//From Input
-	int32 NbCellsX, NbTilesInCellsX; // Size of the Map in cells
-	int32 NbCellsY, NbTilesInCellsY; // Size of the Map in cells
+	int32 NbCellsX = 10;
+	int32 NbCellsY = 10;
 
-	// From Generation
-	TArray<FTile> Tiles;
-	TArray<FCell> Cells; // Cells in this Map
-	TArray<FCorridor> Corridors; // todo
-	TBitArray<> OccupiedCells; // Cells with rooms
-	TBitArray<> BannedCells; // Cells forbidden
+	int32 NbTilesInCellsX = 10;
+	int32 NbTilesInCellsY = 10;
+	int32 TileSize = 400;
 
-	// Other
-	FVector WorldLocationTilesOffset;
-	float TileSize; // Size of a tile in Unreal units, used for conversion to FVector
+	TArray<FCell> Cells;
+	// TArray<FTile> Tiles;
 
-	FDungeonMap() 
-	{
-		NbCellsX = 0;
-		NbCellsY = 0;
-		NbTilesInCellsX = 5; // Default tile size in cells
-		NbTilesInCellsY = 5; // Default tile size in cells
-		OccupiedCells.Init(false, NbCellsX * NbCellsY);
-		BannedCells.Init(false, NbCellsX * NbCellsY);
-		TileSize = 400.0f; // Default tile size in Unreal units
-	}
-	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InNbTilesInCellsX = 5, int32 InNbTilesInCellsY = 5, float InTileSize = 400.0f);
-
-	inline FIntCoordinate GetStartingCellCoord() const { return FIntCoordinate(NbCellsX / 2, NbCellsY / 2); }
-	inline const FCell* GetStartingCell() const { return GetCell(GetStartingCellCoord()); }
-	FVector GetPlayerStartingWorldLocation() const { return (GetStartingCell()->Room.GetWorldPositionCenter() + FVector(0, 0, 100)); }
-	void SetCell(const FCell& Cell);
-	FCell* GetCell(const FIntCoordinate& Coord);
-	const FCell* GetCell(const FIntCoordinate& Coord) const;
-	void BanCell(const FIntCoordinate& CellCoord);
-	// To Call at the end of the generation
-	void FillMapTiles();
-	// Find The cell containing a tile
-	FCell* GetCellFromTile(FTile Tile);
-	bool IsTileInMap(const FIntCoordinate& TileCoord) const
-	{
-		return TileCoord.x >= 0 && TileCoord.x < NbCellsX * NbTilesInCellsX &&
-			   TileCoord.y >= 0 && TileCoord.y < NbCellsY * NbTilesInCellsY;
-	}
-	bool IsCellInMap(const FIntCoordinate& CellCoord) const
-	{
-		return CellCoord.x >= 0 && CellCoord.x < NbCellsX &&
-			   CellCoord.y >= 0 && CellCoord.y < NbCellsY;
-	}
-	TArray<ECardinalDirection> GetAvailableDirections(const FIntCoordinate& CellCoord) const;
-	TArray<ECardinalDirection> GetExistingRoomsDirection(const FIntCoordinate& CellCoord) const;
-	FColor GetDebugColor(const FCell& Cell) const;
-
-	int32 GetNumberOfOccupiedCells() const { return OccupiedCells.CountSetBits(); }
-	bool HasAvailableCells() const { return OccupiedCells.Num() - GetNumberOfOccupiedCells() - BannedCells.CountSetBits() > 0; }
+	FDungeonMap();
+	FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InTileSize = 400, int32 InNbTilesInCellsX = 10, int32 InNbTilesInCellsY = 10);
 	
-	bool IsCellEmptyAndAvailable(const FIntCoordinate& Coord) const {
-		CheckCellCoordinates(Coord);
-		int32 index = GetCellIndex(Coord);
-		return !OccupiedCells[index] && !BannedCells[index];
-	}
+	void AddRoom(FIntCoordinate CellCoord, ERoomType RoomType, TSubclassOf<APremadeRoom> RoomClass = nullptr); // Add a room to the map at the given cell coordinate
+	void BanCell(FIntCoordinate CellCoord); // Mark a cell as banned (won't be used in generation)
+	void AddCorridor(FIntCoordinate FromCellCoord, FIntCoordinate ToCellCoord); // Add a corridor between two adjacent cells
 
-	bool IsOccupied(const FCell& Cell) const {
-		CheckCellCoordinates(Cell.CellCoord);
-		return OccupiedCells[Cell.IndexInCellsArray];
-	}
-	bool IsOccupied(const FIntCoordinate& CellCoord) const {
-		CheckCellCoordinates(CellCoord);
-		return OccupiedCells[GetCellIndex(CellCoord)];
-	}
+	TArray<ECardinalDirection> GetAvailableDirections(FIntCoordinate CellCoord) const; // Get all direction with empty and not banned neighboring cells
+	FCell* GetCell(FIntCoordinate CellCoord); // Get a pointer to the cell at the given coordinate (nullptr if out of bounds)
+	const FCell& GetCellRef(FIntCoordinate CellCoord) const; // Be sure the coordinates are valide first
+	FCell* GetCell(int32 index); // Get a pointer to the cell at the given index (nullptr if out of bounds)
+	const FCell& GetCellRef(int32 index) const; // Be sure the index is valide first
+	FIntCoordinate GetStandardStartingCellCoordinate() const; // Return the standard starting cell coordinate (center of the map)
+	const FIntCoordinate GetCellWorldCoordinate(int32 CellIndex) const; // Compute the world coordinate of a cell from its index in the FCell array
+	bool IsCellCoordinateValid(FIntCoordinate CellCoord) const; // Check coordinates are within bounds
+	bool IsCellIndexValid(int32 CellIndex) const; // Check index is within bounds
 
-	bool IsBanned(const FCell& Cell) const {
-		CheckCellCoordinates(Cell.CellCoord);
-		return BannedCells[Cell.IndexInCellsArray];
-	}
-
-	int32 GetCellIndex(const FIntCoordinate& Coord) const
-	{
-		CheckCellCoordinates(Coord);
-		return Coord.x + Coord.y * NbCellsX;
-	}
-	
-	int32 GetTileIndex(const FIntCoordinate& TileCoord) const
-	{
-		CheckTileCoordinate(TileCoord);
-		return TileCoord.x + TileCoord.y * (NbCellsX * NbTilesInCellsX);
-	}
-
-	// Corridor management
-	void AddCorridor(const FIntCoordinate& StartingCellCoord, const FIntCoordinate& EndingCellCoord);
+	int32 GetRoomCount() const; // Return the number of cells that are not empty and not banned
+	int32 GetEmptyCellsCount() const; // Return the number of empty cells
 
 private:
-	// Not to call alone, will erase corridors
-	void FillCellTiles(const FCell& Cell);
-	void FillCorridorTiles(const FCorridor& Corridor);
-
-	// Get Tile Index in array
-	int32 GetTileIndex(const FTile& Tile) const
-	{
-		return GetTileIndex(Tile.TileCoord);
-	}
-
-	const FIntCoordinate GetTileCoordinates(int32 Index) const
-	{
-		int32 TileX = Index % (NbCellsX * NbTilesInCellsX);
-		int32 TileY = Index / (NbCellsX * NbTilesInCellsX);
-		return FIntCoordinate(TileX, TileY);
-	}
-
-	const FCell* GetConstCellByCoordinates(const FIntCoordinate& Coord) const
-	{
-		CheckCellCoordinates(Coord);
-		return &Cells[GetCellIndex(Coord)];
-	}
-
-	FCell* GetCellByCoordinates(const FIntCoordinate& Coord)
-	{
-		CheckCellCoordinates(Coord);
-		return &Cells[GetCellIndex(Coord)];
-	}
-
-	void CheckCellCoordinates(const FIntCoordinate& CellCoord) const
-	{
-		if (CellCoord.x < 0 || CellCoord.x >= NbCellsX || CellCoord.y < 0 || CellCoord.y >= NbCellsY)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Coordinates out of bounds: %s"), *CellCoord.ToString());
-			check(false); // Ensure this is caught during development
-		}
-	}
-
-	void CheckTileCoordinate(const FIntCoordinate& TileCoord) const
-	{
-		if (TileCoord.x < 0 || TileCoord.x >= NbCellsX * NbTilesInCellsX ||
-			TileCoord.y < 0 || TileCoord.y >= NbCellsY * NbTilesInCellsY)
-		{
-			UE_LOG(LogTemp, Error, TEXT("Tile coordinates out of bounds: %s"), *TileCoord.ToString());
-			check(false); // Ensure this is caught during development
-		}
-	}
-
-	void CheckCellIndex(int32 Index) const
-	{
-		if (Index < 0 || Index >= Cells.Num())
-		{
-			UE_LOG(LogTemp, Error, TEXT("Cell index out of bounds: %d"), Index);
-			check(false); // Ensure this is caught during development
-		}
-	}
-
-};
-
-// Used for data asset to contain map meshes or BP
-USTRUCT(BlueprintType)
-struct ROGUIE_API FMapElement
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Map")
-	TObjectPtr<UStaticMesh> StaticMesh; // Mesh for the map
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Tile")
-    TSubclassOf<AActor> BlueprintClass = nullptr;
-};
-
-UENUM(BlueprintType)
-enum class EAssetsAnchorType : uint8
-{
-	None        UMETA(DisplayName = "None"),
-	TopLeft 	UMETA(DisplayName = "Top Left"),
-	Center 		UMETA(DisplayName = "Center")
+	// Cell Management
+	int32 GetCellIndex(int32 i, int32 j) const; // Compute a cell index in the FCell array from its (i,j) coordinate
+	FIntCoordinate GetCellCoordinate(int32 CellIndex) const; // Compute the (i,j) coordinate of a cell from its index in the FCell array
+	FIntCoordinate GetCellCenterOffset(int32 CellIndex) const; // Compute the offset of the center of a cell
 };

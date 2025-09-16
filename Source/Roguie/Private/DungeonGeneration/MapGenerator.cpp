@@ -55,12 +55,6 @@ void AMapGenerator::CreateDungeonMap()
 	DungeonWorldBuilderComponent->BuildDungeon();
 }
 
-FVector AMapGenerator::GetPlayerStartingLocation() const
-{
-	// Get the player starting location from the map elements data asset
-    return DungeonMap->GetPlayerStartingWorldLocation();
-}
-
 int32 AMapGenerator::GetDynamicSeed()
 {
     FDateTime Now = FDateTime::UtcNow();

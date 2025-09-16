@@ -11,6 +11,10 @@
 class ASpawner;
 class ADoor;
 
+// TODO
+// If starting -> player spawn location marker (create a BP)
+// 		Check if has a player spawn in components -> should be starting or error.
+
 UCLASS()
 class ROGUIE_API APremadeRoom : public AActor, public FLogger
 {
@@ -29,8 +33,6 @@ protected:
 private:	
 
 	void GatherContent();
-
-private:
 
 	TArray<TObjectPtr<ASpawner>> Spawners;
 	TArray<TObjectPtr<ADoor>> Doors;
