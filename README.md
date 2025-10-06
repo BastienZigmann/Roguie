@@ -1,4 +1,4 @@
-# 🧩 Roguie — Top-Down Roguelike Dungeon Crawler (UE 5.5.4)
+# Roguie — Top-Down Roguelike Dungeon Crawler (UE 5.5.4)
 
 **Roguie** is a fast-paced, top-down roguelike game developed in **Unreal Engine 5.5.4** using a **mainly focused C++ architecture**. Feature focus is on **procedural generation**, **modular systems**, and **polished gameplay feel**.
 
@@ -6,7 +6,7 @@
 
 ---
 
-## 🎮 Gameplay Overview
+## Gameplay Overview
 
 - **Core Loop**: Progress through procedurally generated dungeon floors while defeating enemies and collecting gameplay-altering items.
 - **Combat**: 
@@ -26,7 +26,7 @@
 
 ---
 
-## 🧠 Technical Focus
+## Technical Focus
 
 - Fully C++ structured gameplay systems with minimal Blueprint dependency.
 - Strong emphasis on modularity, extensibility, and clean architecture.
@@ -36,9 +36,9 @@
 
 ---
 
-## ✅ Progress Tracking
+## Progress Tracking
 
-### ✔️ **Completed**
+### **Completed**
 - Custom C++ character class
 - WASD movement + dash/teleport system (stack and cooldown-based)
 - Controller support + input remapping foundations
@@ -50,13 +50,13 @@
 - Game architecture refactor into modular systems
 - Project planning and development tracking infrastructure
 
-### 🛠️ **In Progress**
+### **In Progress**
 - Status effect system (stun, stagger, knockback)
 - Home made AI behavior states (patrol, chase, attack, idle) (no behavior tree)
 - Weapon skill system (2 active + 1 ultimate per weapon)
 - Dungeon content (enemy placement, loot spawns)
 
-### 🔜 **Planned**
+### **Planned**
 - Procedural dungeon generator (room structure, randomized layout, scalable logic)
 - Item drop system and inventory
 - Weapon evolution & skill replacement
