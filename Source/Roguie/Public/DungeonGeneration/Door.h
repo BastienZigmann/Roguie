@@ -18,7 +18,7 @@ public:
 	// Sets default values for this actor's properties
 	ADoor();
 
-	virtual void OnConstruction(const FTransform& Transform) override;
+	
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Parameters")
 	bool bIsWall = false;
@@ -37,6 +37,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 private:	
     void GatherByTags(TArray<UStaticMeshComponent*>& OutDoors, TArray<UStaticMeshComponent*>& OutWalls) const;

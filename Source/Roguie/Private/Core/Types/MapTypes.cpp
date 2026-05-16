@@ -72,7 +72,7 @@ FDungeonMap::FDungeonMap()
 }
 
 FDungeonMap::FDungeonMap(int32 InNbCellsX, int32 InNbCellsY, int32 InTileSize, int32 InNbTilesInCellsX, int32 InNbTilesInCellsY)
-    : NbCellsX(InNbCellsX), NbCellsY(InNbCellsY), TileSize(InTileSize), NbTilesInCellsX(InNbTilesInCellsX), NbTilesInCellsY(InNbTilesInCellsY)
+    : TileSize(InTileSize), NbCellsX(InNbCellsX), NbCellsY(InNbCellsY), NbTilesInCellsX(InNbTilesInCellsX), NbTilesInCellsY(InNbTilesInCellsY)
 {
     Cells.Reserve(NbCellsX * NbCellsY);
     Cells.SetNum(NbCellsX * NbCellsY);
